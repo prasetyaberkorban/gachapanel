@@ -9,7 +9,6 @@
     <title>FOERTA — Telegram Center</title>
     <link rel="stylesheet" href="style.css?v=11.24">
     <style>
-        /* --- GAYA RESPONSIF & MOBILE --- */
         .hamburger-btn { display: none; }
         @media (max-width: 768px) {
             body { display: block !important; overflow-x: hidden; }
@@ -25,7 +24,6 @@
             .header { flex-direction: column !important; gap: 10px !important; margin-top: 5px !important; }
         }
 
-        /* --- STYLING KHUSUS TELEGRAM BOT UI --- */
         .bot-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; flex-wrap: wrap; }
         .bot-tab { background: transparent; color: var(--text2); border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: bold; font-size: 12px; transition: 0.3s; }
         .bot-tab:hover { background: rgba(0, 210, 255, 0.05); color: var(--text); }
@@ -35,22 +33,18 @@
         .messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .chat-action-area { padding: 15px; background: var(--surface); border-top: 1px solid var(--border); }
 
-        /* Chat Bubbles */
         .msg-bubble { padding: 12px 16px; border-radius: 12px; max-width: 85%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; }
         .msg-in { background: #2b5278; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-out { background: #407b46; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
 
-        /* Inline Keyboard */
         .tg-keyboard { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
         .tg-btn-row { display: flex; gap: 6px; justify-content: space-between; flex-wrap: wrap; }
         .tg-btn-inline { background: rgba(0, 0, 0, 0.3); color: #5eb5f7; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; cursor: pointer; flex: 1; min-width: 30%; text-align: center; font-size: 11px; font-weight: bold; transition: 0.2s; font-family: 'JetBrains Mono', monospace; }
         .tg-btn-inline:hover { background: rgba(0, 210, 255, 0.2); border-color: var(--cyan); }
 
-        /* Highlight Text */
         .copyable-num { background: rgba(0, 210, 255, 0.15); color: var(--cyan); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; text-decoration: underline dashed; }
         .copyable-num:hover { background: var(--cyan); color: #000; }
         
-        /* Toast Notification (Copy Success) */
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 10000; }
     </style>
 </head>
@@ -80,9 +74,13 @@
             </div>
             
             <div class="bot-tabs">
-                <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">PBD Panel</button>
-                <button class="bot-tab" onclick="switchBot('@BotOTP2', this)">Bot OTP 2</button>
-                <button class="bot-tab" onclick="switchBot('@BotOTP3', this)">Bot OTP 3</button>
+                <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">@PBDxbot</button>
+                <button class="bot-tab" onclick="switchBot('@ROCKETOTP_BOT', this)">@ROCKETOTP_BOT</button>
+                <button class="bot-tab" onclick="switchBot('@mrotpgen3_bot', this)">@mrotpgen3_bot</button>
+                <button class="bot-tab" onclick="switchBot('@IMS_OTP_Number_BOT', this)">@IMS_OTP_Number_BOT</button>
+                <button class="bot-tab" onclick="switchBot('@KING_SMS_PANEL_BOT', this)">@KING_SMS_PANEL_BOT</button>
+                <button class="bot-tab" onclick="switchBot('@OneSmsXbot', this)">@OneSmsXbot</button>
+                <button class="bot-tab" onclick="switchBot('@NokosxBot', this)">@NokosxBot</button>
             </div>
 
             <div class="chat-wrapper">
@@ -136,7 +134,6 @@
     }
 
     function copyNumber(numStr) {
-        // Membersihkan spasi / strip agar nomor bersih
         const cleanNum = numStr.replace(/[\s\-\(\)]/g, '');
         navigator.clipboard.writeText(cleanNum).then(() => {
             const toast = document.getElementById('toast');
@@ -150,12 +147,10 @@
         if (!text) return "";
         let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         
-        // Render Markdown Bawaan Telegram
         safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
         safeText = safeText.replace(/__(.*?)__/g, '<em>$1</em>'); 
         safeText = safeText.replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.5);padding:2px 4px;border-radius:4px;color:var(--cyan);">$1</code>'); 
         
-        // Render Angka biasa yang terselip di teks (Opsional)
         let regex = /(\+?[\d\s\-\(\)]{8,18}\d)/g;
         return safeText.replace(regex, (match) => {
             const cleanNum = match.replace(/[\s\-\(\)]/g, ''); 
@@ -197,25 +192,16 @@
             msg.buttons.forEach(row => {
                 htmlContent += `<div class="tg-btn-row">`;
                 row.forEach(btn => {
-                    
                     if (btn.url) {
-                        // Tombol Link
                         htmlContent += `<button class="tg-btn-inline" onclick="window.open('${btn.url}', '_blank')">${btn.text}</button>`;
-                    
                     } else if (btn.data) {
-                        // Tombol Inline (Callback / Menunggu Proses)
                         htmlContent += `<button class="tg-btn-inline" onclick="clickTgInline(${msg.messageId}, '${btn.data}', this)">${btn.text}</button>`;
-                    
                     } else if (btn.copyText || btn.className === 'KeyboardButtonCopy') {
-                        // TOMBOL NOMOR (COPY)
                         let txtCopy = btn.copyText || btn.text;
                         htmlContent += `<button class="tg-btn-inline" style="border-color:var(--green); color:var(--green);" onclick="copyNumber('${txtCopy}')">📋 ${btn.text}</button>`;
-                    
                     } else {
-                        // TOMBOL KEYBOARD BAWAAN (seperti "Get Number", dikirim sebagai Teks)
                         htmlContent += `<button class="tg-btn-inline" style="border-color:var(--amber); color:var(--amber);" onclick="sendTelegramCommand('${btn.text}')">${btn.text}</button>`;
                     }
-                    
                 });
                 htmlContent += `</div>`;
             });
