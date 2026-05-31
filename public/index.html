@@ -9,7 +9,7 @@
     <title>FOERTA — Telegram Center</title>
     <link rel="stylesheet" href="style.css?v=11.24">
     <style>
-        /* Gaya Responsif & Mobile */
+        /* --- GAYA RESPONSIF & MOBILE --- */
         .hamburger-btn { display: none; }
         @media (max-width: 768px) {
             body { display: block !important; overflow-x: hidden; }
@@ -123,7 +123,9 @@
         socket.emit('fetch_tg_history', botUsername);
         
         // Jika di HP, tutup sidebar otomatis setelah milih tab
-        document.getElementById('sidebar').classList.remove('show');
+        if(window.innerWidth <= 768) {
+            document.getElementById('sidebar').classList.remove('show');
+        }
     }
 
     function scrollTgBottom() {
@@ -156,9 +158,25 @@
         });
     }
 
+    // --- FUNGSI FORMAT TEXT ---
     function formatTextWithCopy(text) {
-        // Highlight setiap angka yang mirip nomor HP (bisa ada +, minimal 10 digit)
-        return text.replace(/(\+?\d{10,15})/g, '<span class="copyable-num" onclick="copyNumber(\'$1\')">$1</span>');
+        if (!text) return "";
+        
+        // 1. ESCAPE HTML: Mengubah < dan > menjadi karakter aman agar tidak disembunyikan browser.
+        let safeText = text.replace(/&/g, "&amp;")
+                           .replace(/</g, "&lt;")
+                           .replace(/>/g, "&gt;");
+        
+        // 2. REGEX FLEKSIBEL: Menangkap angka panjang (spasi/strip/kurung)
+        let regex = /(\+?[\d\s\-\(\)]{8,18}\d)/g;
+        
+        return safeText.replace(regex, (match) => {
+            const cleanNum = match.replace(/[\s\-\(\)]/g, ''); 
+            // Validasi: pastikan angka asli minimal 8 digit agar tidak salah deteksi
+            if(cleanNum.length < 8) return match; 
+            
+            return `<span class="copyable-num" onclick="copyNumber('${cleanNum}')">${match}</span>`;
+        });
     }
 
     // --- SOCKET LISTENERS ---
