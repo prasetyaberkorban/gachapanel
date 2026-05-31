@@ -61,7 +61,7 @@
   <div class="header">
     <div class="stat-pill cyan" style="border-color: var(--cyan);">
         <span class="status-dot active"></span>
-        <span style="font-weight: bold; letter-spacing: 1px;">Sistem Terhubung</span>
+        <span style="font-weight: bold; letter-spacing: 1px;" id="conn-status">Sistem Terhubung</span>
     </div>
   </div>
 
@@ -101,8 +101,20 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io();
+    // [PERBAIKAN REAL-TIME]: Memaksa koneksi via WebSocket murni untuk menghilangkan jeda "Long Polling"
+    const socket = io({ transports: ['websocket'], upgrade: false });
+    
     let activeTelegramBot = '@PBDxbot';
+
+    // Memancing riwayat langsung ketika koneksi Socket Web -> Server terbuka (Tanpa setTimeout)
+    socket.on('connect', () => {
+        document.getElementById('conn-status').innerText = 'Sistem Terhubung (Real-Time)';
+        socket.emit('fetch_tg_history', activeTelegramBot);
+    });
+
+    socket.on('disconnect', () => {
+        document.getElementById('conn-status').innerText = 'Koneksi Terputus...';
+    });
 
     function switchBot(botUsername, btnElement) {
         activeTelegramBot = botUsername;
@@ -110,6 +122,8 @@
         btnElement.classList.add('active');
         
         document.getElementById('tgMessagesArea').innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>';
+        
+        // Panggil history langsung (tanpa jeda)
         socket.emit('fetch_tg_history', botUsername);
         
         if(window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('show'); }
@@ -218,8 +232,6 @@
             area.appendChild(div);
         }
     }
-
-    setTimeout(() => { socket.emit('fetch_tg_history', activeTelegramBot); }, 1000);
 </script>
 </body>
 </html>
