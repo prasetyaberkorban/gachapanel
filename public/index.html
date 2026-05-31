@@ -9,8 +9,8 @@
     <title>FOERTA — Command Center</title>
     <link rel="stylesheet" href="style.css?v=11.23">
     <style>
-        /* ... (Semua style inline lama kamu tetap ada di sini) ... */
         .hamburger-btn { display: none; }
+        
         @media (max-width: 768px) {
             body { display: block !important; overflow-x: hidden; }
             .hamburger-btn { display: block !important; background: var(--surface2); color: var(--cyan); padding: 15px; text-align: center; font-weight: bold; font-family: 'Syne', sans-serif; border-bottom: 2px solid var(--cyan); position: sticky; top: 0; z-index: 1000; cursor: pointer; font-size: 16px; letter-spacing: 2px; }
@@ -30,6 +30,7 @@
             table.tbl { display: block !important; overflow-x: auto !important; white-space: nowrap !important; }
             .login-box { padding: 25px 20px !important; width: 90% !important; margin: 0 auto; }
         }
+
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #111318 0%, #070809 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
         #login-overlay::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0, 210, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 210, 255, 0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
         .login-wrapper { position: relative; z-index: 10; width: 100%; max-width: 380px; animation: fadeUp 0.6s ease-out; }
@@ -50,6 +51,7 @@
         .btn-register:hover { border-color: var(--cyan); color: var(--cyan); }
         .expire-alert { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--red); font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 12px; }
         .key-desc { font-size: 11px; color: var(--text2); text-align: center; margin-bottom: 25px; line-height: 1.6; }
+        
         .admin-only { display: none !important; }
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: var(--surface2); border: 1px solid var(--border); border-left: 4px solid var(--cyan); color: var(--text); padding: 15px 20px; border-radius: 6px; box-shadow: 0 5px 20px rgba(0,0,0,0.6); animation: slideInRight 0.3s forwards; font-family: 'JetBrains Mono', monospace; font-size: 12px; min-width: 250px; pointer-events: auto; }
@@ -62,23 +64,29 @@
         .modal-box { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--cyan); border-radius: 8px; padding: 25px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); animation: fadeUp 0.3s ease-out; }
         .modal-box p { font-size: 14px; margin-bottom: 25px; color: var(--text); font-family: 'Syne', sans-serif; font-weight: bold; line-height:1.5; }
         .modal-btn-row { display: flex; gap: 10px; justify-content: center; }
+
         .dual-list-container { display: flex; gap: 10px; margin-top: 10px; }
         @media (max-width: 768px) { .dual-list-container { flex-direction: column; } }
         .dl-box { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; height: 150px; overflow-y: auto; padding: 10px; }
         .dl-title { font-size: 10px; color: var(--text2); margin-bottom: 8px; font-weight: bold; letter-spacing: 1px; }
         .dl-item { background: var(--surface); padding: 8px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; color: #ffffff !important; font-weight: bold; }
         .dl-item:hover { border-color: var(--cyan); }
+        
         .bc-banner { background: rgba(0, 210, 255, 0.1); border-left: 4px solid var(--cyan); padding: 15px; margin-bottom: 20px; border-radius: 4px; }
         .bc-date { font-size: 10px; color: var(--text2); display: block; margin-bottom: 5px; }
+
         .pagination-container { display: flex; gap: 5px; margin-top: 10px; justify-content: center; }
         .page-btn { padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 4px; cursor: pointer; font-size: 11px; }
         .page-btn.active { background: var(--cyan); color: #000; border-color: var(--cyan); font-weight: bold; }
+        
         .search-box { width: 100%; padding: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; margin-bottom: 10px; font-family: monospace; }
         .task-card { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--cyan); padding: 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
         .task-card.paused { border-left-color: var(--amber); opacity: 0.7; }
+        
         .local-log-box::-webkit-scrollbar { width: 6px; }
         .local-log-box::-webkit-scrollbar-track { background: var(--bg); }
         .local-log-box::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 3px; }
+
         textarea.pastebin-input { width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-family: monospace; font-size: 11px; resize: vertical; min-height: 80px; }
         textarea.pastebin-input:focus { outline: none; border-color: var(--cyan); }
     </style>
@@ -88,6 +96,36 @@
 <div class="modal-overlay" id="custom-modal"><div class="modal-box"><p id="modal-msg">Apakah Anda yakin?</p><div class="modal-btn-row"><button class="btn btn-outline" onclick="closeModal(false)">Batal</button><button class="btn btn-cyan" onclick="closeModal(true)" id="modal-btn-yes">Ya, Lanjutkan</button></div></div></div>
 <div id="toast-container"></div>
 
+<div id="login-overlay">
+    <div class="login-wrapper">
+        <div class="login-brand"><h2>FOERTA</h2><span class="version-badge">v11.23</span></div>
+        <div class="login-box" id="box-login">
+            <div id="login-msg" class="login-alert"></div>
+            <div class="input-group"><input type="text" id="log-user" placeholder="Username" autocomplete="off" required></div>
+            <div class="input-group"><input type="password" id="log-pass" placeholder="Password" autocomplete="off" required></div>
+            <button class="btn-login" onclick="doLogin()">LOGIN</button>
+            <div class="login-footer"><span>Belum punya akses?</span><button class="btn-register" onclick="showRegister()">DAFTAR AKUN BARU</button></div>
+        </div>
+        <div class="login-box" id="box-register" style="display:none; border-top-color: var(--amber);">
+            <div id="reg-msg" class="login-alert"></div>
+            <p style="text-align:center; font-size:12px; color:var(--text2); margin-bottom:15px;">Buat Akun Baru FOERTA</p>
+            <div class="input-group"><input type="text" id="reg-user" placeholder="Username Pilihan" autocomplete="off" required></div>
+            <div class="input-group"><input type="password" id="reg-pass" placeholder="Password Pilihan" autocomplete="off" required></div>
+            <button class="btn-login" style="background:var(--amber); color:black;" onclick="doRegister()">REGISTER ACCOUNT</button>
+            <div class="login-footer"><span>Sudah punya akun?</span><button class="btn-register" onclick="showLogin()">KEMBALI KE LOGIN</button></div>
+        </div>
+        <div class="login-box" id="box-key" style="display:none; border-top-color: var(--red);">
+            <div class="expire-alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg><span>ACCESS DENIED</span></div>
+            <p class="key-desc">Masa aktif akun telah habis.<br>Masukkan License Key valid untuk memulihkan akses terminal.</p>
+            <div id="key-msg" class="login-alert"></div>
+            <div class="input-group"><input type="text" id="log-key-user" placeholder="Username Kamu" autocomplete="off" required></div>
+            <div class="input-group"><input type="text" id="log-key-code" placeholder="FOERTA-XXXXXX" autocomplete="off" required></div>
+            <button class="btn-login" style="background:var(--red); color:white;" onclick="submitKey()">ACTIVATE OVERRIDE</button>
+            <div class="login-footer"><a href="https://t.me/navvyyyyyy" target="_blank" class="btn-register" style="text-decoration:none; display:inline-block; border-color:var(--cyan); color:var(--cyan);">HUBUNGI ADMIN</a><button class="btn-register" onclick="doLogout()" style="margin-top:10px;">KEMBALI KE LOGIN</button></div>
+        </div>
+    </div>
+</div>
+
 <div class="hamburger-btn" onclick="toggleSidebar()">☰ MENU FOERTA</div>
 
 <nav class="sidebar" id="sidebar">
@@ -95,14 +133,20 @@
   <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="nav-text">❖ Dashboard</span></div>
   <div class="nav-item" data-page="tasks" onclick="showPage('tasks')"><span class="nav-text">⚙️ Running Tasks</span></div>
   <div class="nav-item" data-page="agents" onclick="showPage('agents')"><span class="nav-text">👥 Sesi Aktif</span></div>
-  
-  <div class="nav-item" data-page="botpanel" onclick="showPage('botpanel')"><span class="nav-text">🤖 Panel Bot OTP</span></div>
-  
   <div class="nav-sep"></div>
+
+  <div class="nav-item" data-page="botpanel" onclick="showPage('botpanel')"><span class="nav-text">🤖 Panel Bot OTP</span></div>
+  <div class="nav-sep"></div>
+
   <div class="nav-item" data-page="automation" onclick="showPage('automation')"><span class="nav-text">🚀 Automation</span></div>
   <div class="nav-item" data-page="tools" onclick="showPage('tools')"><span class="nav-text">🛠️ Tools</span></div>
   <div class="nav-sep"></div>
+  <div class="nav-item admin-only" data-page="broadcast" onclick="showPage('broadcast')"><span class="nav-text">📢 Broadcast</span></div>
+  <div class="nav-item admin-only" data-page="email" onclick="showPage('email')"><span class="nav-text">📧 Email Banding</span></div>
+  <div class="nav-item admin-only" data-page="checker" onclick="showPage('checker')"><span class="nav-text">✅ Cek Nomor WA</span></div>
   <div class="nav-item admin-only" data-page="admin" onclick="showPage('admin')"><span class="nav-text">👑 Panel Admin</span></div>
+  <div class="nav-item admin-only" data-page="monitor" onclick="showPage('monitor')"><span class="nav-text">📊 System Monitor</span></div>
+  <div class="nav-item admin-only" data-page="settings" onclick="showPage('settings')"><span class="nav-text">⚙️ Settings</span></div>
   <div class="nav-item" onclick="doLogout()"><span class="nav-text" style="color:var(--red)">🚪 Logout</span></div>
 </nav>
 
@@ -110,6 +154,7 @@
   <div class="header">
     <div class="stat-pill cyan"><span class="val" id="h-db">0</span><span>Total Sesi DB</span></div>
     <div class="stat-pill green"><span class="val" id="h-active">0</span><span>Sesi Aktif</span></div>
+    <div class="stat-pill amber admin-only"><span class="val" id="h-ai">OFF</span><span>Global AI</span></div>
   </div>
 
   <div class="content">
@@ -139,7 +184,389 @@
         </div>
     </div>
     
-    <div class="page active" id="page-dashboard"> ... </div>
+    <div class="page active" id="page-dashboard">
+      <div id="bc-container"></div> 
+      
+      <div class="agent-grid">
+          <div class="card fade-in">
+              <h3>Panel Kontrol</h3>
+              <div class="form-group"><label>Nama Sesi Baru</label><div style="display:flex; gap:10px;"><input type="text" id="session-name" placeholder="Misal: bot1"><button class="btn btn-cyan" onclick="addSession()">Buat</button></div></div>
+              <div class="form-group" style="margin-top: 15px;"><label>Mulai / Hapus Sesi</label><div style="display:flex; gap:10px;"><select id="session-select"><option value="">Pilih sesi...</option></select><button class="btn btn-cyan" onclick="startSession()">Start</button><button class="btn btn-outline" style="border-color:var(--red);color:var(--red)" onclick="deleteSession()">Delete</button></div></div>
+              <div class="form-group" style="margin-top: 15px; display:flex; gap:10px;"><button class="btn btn-outline" onclick="socket.emit('action',{type:'start_all'})">Start Semua Sesi Milikmu</button></div>
+          </div>
+          <div class="card fade-in">
+              <h3>Scanner QR / Pairing Code</h3>
+              <div id="qr-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:180px; background:var(--surface2); border:1px dashed var(--border); border-radius:8px; padding: 15px;">
+                  <span id="qr-status" class="status-dot idle"></span> <span id="qr-status-text" style="color:var(--text2)">Menunggu inisiasi...</span>
+                  <div id="qr-wrapper" style="display:none; text-align: center; width: 100%;">
+                      <p id="qr-session-name" style="color: var(--cyan); margin-bottom: 10px; font-weight:bold; font-size:14px;"></p>
+                      <img id="qr-img" src="" alt="QR Code" style="max-width: 150px; border-radius: 8px; border: 2px solid var(--border); margin: 0 auto; display:block;">
+                      <div style="width:100%; border-top:1px solid var(--border); padding-top:15px; margin-top: 15px;">
+                          <p style="font-size:11px; color:var(--text2); margin-bottom:8px;">Atau login via Nomor HP (Kode Tautan):</p>
+                          <div style="display:flex; gap:5px; justify-content:center; align-items:center;">
+                              <input type="text" id="pair-num" placeholder="Misal: 6281234..." style="width:130px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-family:monospace; font-size:12px;">
+                              <button class="btn btn-outline" style="padding:8px 12px; font-size:11px; border-color:var(--cyan); color:var(--cyan);" onclick="requestPairCode()">Minta Kode</button>
+                          </div>
+                          <div id="pair-code-res" style="margin-top:10px; font-size:22px; font-weight:bold; color:var(--amber); letter-spacing:4px;"></div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      <div class="log-panel fade-in">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;"><h3>Live Terminal</h3><span style="color:var(--cyan); cursor:pointer; font-size:11px;" onclick="clearLogs()">[CLEAR]</span></div>
+        <div class="log-box" id="log-box" style="height: 300px;"></div>
+      </div>
+    </div>
+
+    <div class="page admin-only" id="page-monitor">
+        <div class="agent-grid">
+            <div class="card fade-in" style="text-align:center; padding: 40px 20px;">
+                <h3 style="color:var(--cyan); font-size:18px;">CPU Load (1m)</h3>
+                <div id="mon-cpu" style="font-size:46px; font-weight:bold; margin-top:15px; font-family:monospace;">0.00</div>
+            </div>
+            <div class="card fade-in" style="text-align:center; padding: 40px 20px;">
+                <h3 style="color:var(--amber); font-size:18px;">RAM Usage</h3>
+                <div style="font-size:46px; font-weight:bold; margin-top:15px; font-family:monospace;"><span id="mon-ram">0.0</span>%</div>
+            </div>
+            <div class="card fade-in" style="text-align:center; padding: 40px 20px;">
+                <h3 style="color:var(--green); font-size:18px;">MongoDB Size</h3>
+                <div style="font-size:46px; font-weight:bold; margin-top:15px; font-family:monospace;"><span id="mon-db">0.00</span><span style="font-size:20px; color:var(--text2); margin-left:5px;">MB</span></div>
+            </div>
+        </div>
+        <div class="card fade-in" style="margin-top:20px;">
+            <p style="font-size:12px; color:var(--text2); text-align:center; margin:0;">Data Server dan Database ini diperbarui secara *real-time* setiap kali sistem memproses pesan atau tugas berjalan.</p>
+        </div>
+    </div>
+
+    <div class="page admin-only" id="page-checker">
+        <div class="agent-grid">
+            <div class="card fade-in">
+                <h3>🔍 Validasi Nomor WhatsApp</h3>
+                <div class="form-group"><label>Pilih Sesi Pengecek (Bisa Multi-Sesi)</label>
+                    <div class="dual-list-container">
+                        <div class="dl-box"><div class="dl-title">TERSEDIA</div><div id="chk-avail"></div></div>
+                        <div class="dl-box"><div class="dl-title">DIPILIH (Membagi Tugas)</div><div id="chk-selected"></div></div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <label style="margin:0;">Masukkan Daftar Nomor (Pisahkan dengan Enter)</label>
+                        <label for="check-file-upload" class="btn btn-outline" style="padding:4px 10px; font-size:10px; cursor:pointer; background:var(--surface2);">📁 Upload .TXT</label>
+                        <input type="file" id="check-file-upload" accept=".txt" style="display:none;" onchange="handleFileUpload(event)">
+                    </div>
+                    <textarea id="check-numbers-input" rows="8" class="pastebin-input" placeholder="081234567xxx&#10;62857xxxxxxx&#10;+6289xxxxxxx"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Jeda Min (Detik)</label><input type="number" id="check-min" value="3"></div>
+                    <div class="form-group"><label>Jeda Max (Detik)</label><input type="number" id="check-max" value="8"></div>
+                </div>
+                <button class="btn btn-cyan" style="width:100%; margin-top:10px;" onclick="startChecker()">Mulai Pengecekan Nomor</button>
+            </div>
+            <div class="card fade-in">
+                <h3>Hasil Pengecekan</h3>
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
+                    <label style="display:flex; align-items:center; gap:5px; font-size:11px; color:var(--cyan);"><input type="checkbox" id="check-opt-plus" checked> Tambahkan +</label>
+                    <span id="check-progress-text" style="font-size:11px; color:var(--text2); background:var(--surface2); padding:3px 8px; border-radius:4px; border:1px solid var(--border);">Proses: 0 / 0 (0%)</span>
+                    <span style="font-size:11px; color:var(--text2);">Valid: <span id="check-valid-count" style="color:var(--green); font-weight:bold;">0</span> | Invalid: <span id="check-invalid-count" style="color:var(--red); font-weight:bold;">0</span></span>
+                </div>
+                <div style="display:flex; gap:10px; height: 180px;">
+                    <textarea id="check-valid-list" style="flex:1; background:rgba(0,255,0,0.05); border:1px solid var(--green); color:var(--green); font-family:monospace; padding:10px; border-radius:6px; resize:none;" readonly placeholder="Nomor Valid (Terdaftar)..."></textarea>
+                    <textarea id="check-invalid-list" style="flex:1; background:rgba(255,0,0,0.05); border:1px solid var(--red); color:var(--red); font-family:monospace; padding:10px; border-radius:6px; resize:none;" readonly placeholder="Nomor Invalid (Tidak Terdaftar)..."></textarea>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:15px;">
+                    <button class="btn btn-outline" style="flex:1; border-color:var(--green); color:var(--green);" onclick="copyValidNumbers()">📋 Copy Valid</button>
+                    <button class="btn btn-outline" style="flex:1; border-color:var(--cyan); color:var(--cyan);" onclick="downloadValidNumbers()">💾 Export Valid .TXT</button>
+                </div>
+                <h4 style="font-size:12px; margin-top:20px; color:var(--cyan);">Log Sistem Pengecekan</h4>
+                <div id="log-checker" class="local-log-box" style="height: 120px; margin-top:5px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-tasks">
+        <div class="card fade-in">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3>Mesin Otomasi (Running Tasks)</h3>
+                <span style="font-size:11px; color:var(--text2);">Semua tugas berjalan terpisah.</span>
+            </div>
+            <div id="tasks-container">
+                <p style="text-align:center; color:var(--text2); font-size:12px; padding:20px;">Belum ada task yang berjalan.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="page" id="page-agents">
+      <div class="card fade-in">
+        <h3>Kirim Pesan ke Sesi Lain (Blast)</h3>
+        <div class="form-group"><label>Sesi Pengirim</label><select id="blast-sender" onchange="updateBlastList()"><option value="">Pilih sesi...</option></select></div>
+        
+        <div class="form-group"><label>Pilih Sesi Target (Penerima)</label>
+            <div class="dual-list-container">
+                <div class="dl-box"><div class="dl-title">TERSEDIA</div><div id="blast-avail"></div></div>
+                <div class="dl-box"><div class="dl-title">DIPILIH</div><div id="blast-selected"></div></div>
+            </div>
+        </div>
+
+        <div class="form-group"><label>Isi Pesan (Pastebin RAW - 1 baris = 1 variasi pesan)</label><input type="text" id="blast-pastebin" placeholder="https://pastebin.com/raw/..." value="https://pastebin.com/raw/Hixn4AdJ"></div>
+        <div class="form-row" style="align-items: flex-end;">
+            <div class="form-group"><label>Jeda Min (Detik)</label><input type="number" id="blast-min" value="5"></div>
+            <div class="form-group"><label>Jeda Max (Detik)</label><input type="number" id="blast-max" value="15"></div>
+            <div class="form-group"><button class="btn btn-cyan" style="width:100%; margin-bottom:2px;" onclick="startBlastTask()">Buat Task Blast</button></div>
+        </div>
+      </div>
+
+      <div class="card fade-in" style="margin-top:20px;">
+        <h3>Daftar Agent (Sesi)</h3>
+        <table class="tbl">
+          <thead><tr><th>Nama Sesi</th><th>Pesan (M/K)</th><th class="admin-only">Status AI</th><th>Aksi</th></tr></thead>
+          <tbody id="agents-tbody"><tr><td colspan="4" style="text-align:center">Kosong</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="page" id="page-automation">
+      <div class="agent-grid">
+          <div class="card fade-in">
+              <h3>Auto Kirim Grup</h3>
+              <div class="form-group"><label>Nama Task</label><input type="text" id="asg-name" placeholder="Misal: Iklan Pagi"></div>
+              
+              <div class="form-group"><label>Pilih Sesi Pengirim</label>
+                  <div class="dual-list-container">
+                      <div class="dl-box"><div class="dl-title">TERSEDIA</div><div id="asg-avail"></div></div>
+                      <div class="dl-box"><div class="dl-title">DIPILIH</div><div id="asg-selected"></div></div>
+                  </div>
+              </div>
+
+              <div class="form-group" style="margin-top:15px;"><label>Pilih Grup Target</label>
+                  <div id="asg-group-list" class="checkbox-list" style="max-height:120px;"><span style="color:var(--text2);font-size:11px;">Pilih sesi dulu lalu klik tombol Muat Grup di bawah...</span></div>
+                  <button class="btn btn-outline" style="width:100%; font-size:10px; padding:4px; margin-top:5px;" onclick="fetchGroupsForASG()">Muat Grup dari Sesi Terpilih</button>
+              </div>
+
+              <div class="form-group"><label>Link Pastebin RAW / Teks Langsung</label>
+                  <textarea id="asg-pastebin" class="pastebin-input" placeholder="https://pastebin.com/raw/...&#10;ATAU paste/ketik teks variasi pesan langsung disini (1 baris = 1 pesan)">https://pastebin.com/raw/Hixn4AdJ</textarea>
+              </div>
+              <div class="form-row" style="align-items: flex-end;">
+                  <div class="form-group"><label>Jeda Min (Detik)</label><input type="number" id="asg-min" value="10"></div>
+                  <div class="form-group"><label>Jeda Max (Detik)</label><input type="number" id="asg-max" value="20"></div>
+              </div>
+              <button class="btn btn-cyan" style="width:100%; margin-top:15px;" onclick="submitASGTask()">Buat Task ASG</button>
+          </div>
+
+          <div class="card fade-in">
+              <h3>Simulasi Multi-Chat</h3>
+              <div class="form-group"><label>Nama Task</label><input type="text" id="sim-name" placeholder="Misal: Sim Grup Komunitas"></div>
+              
+              <div class="form-group"><label>Partisipan Sesi</label>
+                  <div class="dual-list-container">
+                      <div class="dl-box"><div class="dl-title">TERSEDIA</div><div id="sim-avail"></div></div>
+                      <div class="dl-box"><div class="dl-title">DIPILIH</div><div id="sim-selected"></div></div>
+                  </div>
+              </div>
+
+              <div class="form-row" style="margin-top:15px;">
+                  <div class="form-group">
+                      <label>Target Chat</label>
+                      <select id="sim-target-type" onchange="toggleSimGroup()"><option value="1">Antar Sesi (Japri/PC)</option><option value="2">Dalam Grup Bersama</option></select>
+                  </div>
+                  <div class="form-group" id="sim-group-container" style="display:none;">
+                      <label>Pilih Grup Target</label>
+                      <select id="sim-target-jid"><option value="">Klik muat grup dulu...</option></select>
+                      <button class="btn btn-outline" style="width:100%; font-size:10px; padding:4px; margin-top:5px;" onclick="fetchGroupsForSIM()">Muat Grup</button>
+                  </div>
+              </div>
+              <div class="form-row" style="align-items: flex-end;">
+                  <div class="form-group"><label>Jeda Min (Detik)</label><input type="number" id="sim-min" value="5"></div>
+                  <div class="form-group"><label>Jeda Max (Detik)</label><input type="number" id="sim-max" value="15"></div>
+              </div>
+              <div class="form-row">
+                  <div class="form-group"><label>Mode Balasan</label><select id="sim-mode"><option value="ai" class="admin-only">AI (Groq)</option><option value="pastebin" selected>Pastebin</option></select></div>
+                  <div class="form-group"><label>Topik Awal</label><input type="text" id="sim-topic" placeholder="Halo semua"></div>
+              </div>
+              <button class="btn btn-cyan" style="width:100%; margin-top:15px;" onclick="submitSIMTask()">Buat Task Simulasi</button>
+          </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-tools">
+      <div class="agent-grid">
+          <div class="card fade-in">
+              <h3>Auto Save (VCF Generator Advanced)</h3>
+              <div class="form-group">
+                  <label>Pilih Sumber Nomor:</label>
+                  <select id="vcf-source" onchange="toggleVCFUI()">
+                      <option value="cross">Opsi 1: Cross-Saving (Ambil nomor sesi sendiri)</option>
+                      <option value="pastebin">Opsi 2: List Pastebin (Input Manual)</option>
+                  </select>
+              </div>
+
+              <div id="vcf-ui-cross">
+                  <label class="dl-title">Pilih Sesi yang nomornya ingin diambil:</label>
+                  <div class="dual-list-container">
+                      <div class="dl-box" id="vcf-avail"></div>
+                      <div class="dl-box" id="vcf-selected"></div>
+                  </div>
+              </div>
+
+              <div id="vcf-ui-pastebin" style="display:none;">
+                  <div class="form-group"><label>Link Pastebin (RAW) atau Teks Mentah:</label>
+                      <textarea id="vcf-pastebin-input" class="pastebin-input" placeholder="https://pastebin.com/raw/...&#10;ATAU paste daftar nomor kebawah langsung disini..."></textarea>
+                  </div>
+              </div>
+
+              <div style="border-top:1px solid var(--border); margin-top:15px; padding-top:15px;">
+                  <div class="form-group"><label>Kirim Hasil ke Sesi WhatsApp (Opsional):</label><select id="vcf-target-wa"></select></div>
+                  <div style="display:flex; gap:10px;">
+                      <button class="btn btn-cyan" style="flex:1;" onclick="submitVCF('send')">Kirim ke WA</button>
+                      <button class="btn btn-outline" style="flex:1;" onclick="submitVCF('download')">Download VCF</button>
+                  </div>
+              </div>
+          </div>
+          
+          <div class="card fade-in">
+              <h3>Cek & Join Grup</h3>
+              <div class="form-group"><label>Pilih Sesi</label><select id="tool-session"><option value="">Pilih sesi aktif...</option></select></div>
+              
+              <div style="display:flex; gap:10px; margin-bottom: 10px;">
+                  <button class="btn btn-cyan" style="flex:1;" onclick="toolCheckGroup()">Cek Daftar Grup</button>
+                  <button class="btn btn-outline admin-only" style="border-color:var(--amber); color:var(--amber); flex:1;" onclick="fetchGroupsForExtract()">Muat Grup (Ekstrak)</button>
+              </div>
+              
+              <div id="extract-group-list" class="checkbox-list admin-only" style="max-height:120px; display:none; margin-bottom:15px;"></div>
+              <button class="btn btn-outline admin-only" style="width:100%; border-color:var(--amber); color:var(--amber); margin-bottom: 20px; display:none;" id="btn-extract-execute" onclick="toolExtractInvites()">Mulai Ekstrak Link</button>
+
+              <h4 style="font-size:12px; margin-bottom:10px; color:var(--cyan); border-top:1px solid var(--border); padding-top:15px;">Join Grup via Link (Member)</h4>
+              <div class="form-group"><input type="text" id="tool-link" placeholder="https://chat.whatsapp.com/..."></div>
+              <button class="btn btn-outline" style="width:100%" onclick="toolJoinGroup()">Join 1 Grup</button>
+              
+              <div class="admin-only">
+                  <h4 style="font-size:12px; margin-bottom:10px; color:var(--cyan); border-top:1px solid var(--border); padding-top:15px; margin-top:15px;">Mass Join Grup (Admin)</h4>
+                  <div class="form-group"><label>Pilih Sesi (Bisa Multi-Sesi)</label>
+                      <div class="dual-list-container">
+                          <div class="dl-box"><div class="dl-title">TERSEDIA</div><div id="join-avail"></div></div>
+                          <div class="dl-box"><div class="dl-title">DIPILIH</div><div id="join-selected"></div></div>
+                      </div>
+                  </div>
+                  <div class="form-group">
+                      <textarea id="tool-pastebin-join" class="pastebin-input" placeholder="https://pastebin.com/raw/...&#10;ATAU paste kumpulan link grup (chat.whatsapp.com/...) langsung kesini"></textarea>
+                  </div>
+                  <div class="form-row" style="align-items: flex-end;">
+                      <div class="form-group"><label>Jeda Min (Detik)</label><input type="number" id="join-min" value="10"></div>
+                      <div class="form-group"><label>Jeda Max (Detik)</label><input type="number" id="join-max" value="20"></div>
+                  </div>
+                  <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="toolMassJoin()">Buat Task Mass Join</button>
+              </div>
+
+              <h4 style="font-size:12px; margin-bottom:5px; color:var(--cyan); border-top:1px solid var(--border); padding-top:15px; margin-top:15px;">Log Aktivitas (Cek & Join)</h4>
+              <div id="log-join" class="local-log-box" style="height: 150px; overflow-y:auto; padding:10px; background:#1A1D24; border:1px solid #2D323E; border-radius:6px; font-family:monospace; font-size:11px;"></div>
+          </div>
+      </div>
+    </div>
+
+    <div class="page admin-only" id="page-broadcast">
+        <div class="card fade-in">
+            <h3>Buat Pengumuman (Broadcast Member)</h3>
+            <div class="form-group"><label>Isi Pesan Pengumuman</label><textarea id="bc-text" rows="4" placeholder="Tulis pengumuman di sini... mendukung HTML/Tag br"></textarea></div>
+            <button class="btn btn-cyan" style="width:100%" onclick="addBroadcast()">Kirim Broadcast Global</button>
+            <h4 style="margin-top:20px; margin-bottom:10px; font-size:12px; color:var(--cyan);">Riwayat Broadcast Aktif</h4>
+            <div id="bc-list-admin"></div>
+        </div>
+    </div>
+
+    <div class="page admin-only" id="page-email">
+      <div class="agent-grid">
+          <div class="card fade-in">
+              <h3>Ekstraksi Nomor & Kirim Auto Email</h3>
+              <div class="form-group"><label>Paste Format Teks</label><textarea id="email-text" rows="8" placeholder="Paste teks bebas yang mengandung nomor hp..."></textarea></div>
+              <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                  <button class="btn btn-cyan" onclick="ekstrakNomor()">🔍 Ekstrak</button>
+                  <button class="btn btn-outline" style="border-color:var(--amber);color:var(--amber)" onclick="copyClipboard()">📋 Copy</button>
+              </div>
+              <div class="form-group">
+                  <label>Nomor Terdeteksi</label>
+                  <div id="email-number-list" class="checkbox-list" style="height: 100px; max-height:100px;"><span style="color:var(--text2);font-size:11px;">Belum ada nomor...</span></div>
+              </div>
+              <button class="btn btn-cyan" style="width:100%; background: #2196F3;" onclick="kirimEmail()">🚀 Kirim Email Banding Massal</button>
+          </div>
+          <div class="card fade-in">
+              <h3>Log Aktivitas Email</h3>
+              <div id="log-email" class="local-log-box" style="height: 380px;"></div>
+          </div>
+      </div>
+    </div>
+
+    <div class="page admin-only" id="page-admin">
+      <div class="agent-grid">
+          <div class="card fade-in">
+              <h3>Manajemen License Key</h3>
+              <div class="form-row" style="align-items: flex-end;">
+                  <div class="form-group"><label>Hari</label><input type="number" id="adm-key-d" value="0"></div>
+                  <div class="form-group"><label>Jam</label><input type="number" id="adm-key-h" value="0"></div>
+                  <div class="form-group"><label>Menit</label><input type="number" id="adm-key-m" value="0"></div>
+                  <div class="form-group"><button class="btn btn-cyan" style="width:100%; margin-bottom: 2px;" onclick="generateKey()">Buat Key</button></div>
+              </div>
+              <h3 style="margin-top:20px;">Daftar Key Aktif (Belum Terpakai)</h3>
+              <div id="adm-key-list" style="min-height:200px; user-select:all;"></div>
+              <div class="pagination-container" id="key-pagination"></div>
+          </div>
+          
+          <div class="card fade-in">
+              <h3>Manajemen User & Status Bot</h3>
+              <div style="background:var(--surface2); padding:15px; border-radius:8px; margin-bottom:15px; border:1px solid var(--border);">
+                  <h4 style="margin-bottom:10px; color:var(--cyan); font-size:12px;">+/- Atur Waktu Manual Ke User</h4>
+                  <div class="form-row" style="align-items: flex-end;">
+                      <div class="form-group"><label>Pilih User</label><select id="adm-add-user"><option value="">Pilih...</option></select></div>
+                      <div class="form-group"><label>Hari</label><input type="number" id="adm-add-d" value="0"></div>
+                      <div class="form-group"><label>Jam</label><input type="number" id="adm-add-h" value="0"></div>
+                      <div class="form-group"><label>Menit</label><input type="number" id="adm-add-m" value="0"></div>
+                      <div class="form-group" style="display:flex; gap:5px; margin-bottom:2px;">
+                          <button class="btn btn-outline" style="border-color:var(--green); color:var(--green); flex:1;" onclick="adminAddTime(false)">Tambah</button>
+                          <button class="btn btn-outline" style="border-color:var(--amber); color:var(--amber); flex:1;" onclick="adminAddTime(true)">Kurangi</button>
+                      </div>
+                  </div>
+              </div>
+
+              <input type="text" id="user-search" class="search-box" placeholder="Cari username..." oninput="renderAdminUsers()">
+              <table class="tbl">
+                  <thead><tr><th>Username</th><th>Password</th><th>Exp (WIB)</th><th>Sesi/Task</th><th>Key</th><th>Aksi</th></tr></thead>
+                  <tbody id="adm-user-list"></tbody>
+              </table>
+              <div class="pagination-container" id="user-pagination"></div>
+          </div>
+      </div>
+    </div>
+
+    <div class="page admin-only" id="page-settings">
+      <div class="agent-grid">
+          <div class="card fade-in">
+              <h3>Pengaturan Akun Gmail (SMTP)</h3>
+              <div class="form-row" style="align-items: flex-end;">
+                  <div class="form-group"><label>Email Pengirim (Gmail)</label><input type="text" id="set-email" placeholder="contoh@gmail.com"></div>
+                  <div class="form-group"><label>App Password</label><input type="password" id="set-email-pass" placeholder="16 Digit Huruf"></div>
+                  <div class="form-group"><button class="btn btn-cyan" style="width:100%; margin-bottom: 2px;" onclick="addEmailAccount()">Simpan Akun</button></div>
+              </div>
+              <div class="form-group" style="margin-top: 15px;">
+                  <label>Daftar Akun Tersimpan</label>
+                  <table class="tbl">
+                    <thead><tr><th>Email</th><th>Password App</th><th>Aksi</th></tr></thead>
+                    <tbody id="email-tbody"><tr><td colspan="3" style="text-align:center">Kosong</td></tr></tbody>
+                  </table>
+              </div>
+          </div>
+          <div class="card fade-in">
+              <h3>Pengaturan AI & Balasan</h3>
+              <div class="form-group"><label>Target Reply</label><select id="set-target-reply"><option value="all">Semua (PC & Grup)</option><option value="private">PC Saja</option><option value="group">Grup Saja</option></select></div>
+              <div class="form-row">
+                  <div class="form-group"><label>Jeda AI Min (Detik)</label><input type="number" id="set-delay-min"></div>
+                  <div class="form-group"><label>Jeda AI Max (Detik)</label><input type="number" id="set-delay-max"></div>
+              </div>
+              <div style="display:flex; gap:10px;"><button class="btn btn-cyan" onclick="saveSettings()">Simpan Pengaturan</button><button class="btn btn-outline" onclick="socket.emit('action',{type:'toggle_ai'})">Toggle Global AI</button></div>
+              <div class="form-group" style="margin-top:20px;"><label>API Keys Groq (Koma)</label><textarea id="set-api-keys" rows="3" placeholder="gsk_123, gsk_456..."></textarea></div>
+              <button class="btn btn-cyan" style="width:100%" onclick="saveApiKeys()">Update Keys</button>
+          </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -149,58 +576,45 @@
 <script>
     let activeTelegramBot = '@PBDxbot';
 
-    // Pindah Tab Bot
     function switchBot(botUsername, btnElement) {
         activeTelegramBot = botUsername;
-        
-        // Update UI Tab Active
         document.querySelectorAll('.bot-tab').forEach(b => b.classList.remove('active'));
         btnElement.classList.add('active');
         
-        // Bersihkan layar dan minta riwayat dari server
         document.getElementById('tgMessagesArea').innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>';
         socket.emit('fetch_tg_history', botUsername);
     }
 
-    // Scroll ke bawah
     function scrollTgBottom() {
         const area = document.getElementById('tgMessagesArea');
         area.scrollTop = area.scrollHeight;
     }
 
-    // Kirim Perintah Start
     function sendTelegramCommand(cmd) {
-        // Tampilkan bubble user
         const area = document.getElementById('tgMessagesArea');
         area.innerHTML += `<div class="msg-bubble msg-out">${cmd}</div>`;
         scrollTgBottom();
-        
         socket.emit('send_tg_command', { target: activeTelegramBot, command: cmd });
     }
 
-    // Eksekusi Tombol Inline
     function clickTgInline(msgId, dataBase64, btnElement) {
         btnElement.style.opacity = '0.5';
         btnElement.innerText = '⏳';
         socket.emit('click_tg_inline', { target: activeTelegramBot, messageId: msgId, data: dataBase64 });
     }
 
-    // Fitur Auto-Copy Nomor
     function copyNumber(numStr) {
         navigator.clipboard.writeText(numStr).then(() => {
-            alert(`Nomor ${numStr} berhasil disalin ke clipboard!`);
+            alert(`Nomor ${numStr} berhasil disalin!`);
         });
     }
 
-    // Parsing Teks untuk Highlight Nomor
     function formatTextWithCopy(text) {
-        // Mencari pola nomor telepon dengan Regex (Opsional diawali +, lalu angka panjang)
         return text.replace(/(\+?\d{10,15})/g, '<span class="copyable-num" onclick="copyNumber(\'$1\')">$1</span>');
     }
 
-    // Menerima Riwayat Penuh dari Server (Saat refresh atau ganti tab)
     socket.on('tg_history', (payload) => {
-        if (payload.bot !== activeTelegramBot) return; // Abaikan jika tab sudah diganti
+        if (payload.bot !== activeTelegramBot) return; 
         
         const area = document.getElementById('tgMessagesArea');
         area.innerHTML = '';
@@ -210,20 +624,16 @@
             return;
         }
 
-        payload.messages.forEach(msg => {
-            renderTgMessage(msg);
-        });
+        payload.messages.forEach(msg => { renderTgMessage(msg); });
         scrollTgBottom();
     });
 
-    // Menerima Pesan Baru / Update Pesan dari Server
     socket.on('tg_message_update', (msg) => {
         if (msg.bot !== activeTelegramBot) return;
         renderTgMessage(msg, true);
         scrollTgBottom();
     });
 
-    // Render Gelembung Chat
     function renderTgMessage(msg, isUpdate = false) {
         const area = document.getElementById('tgMessagesArea');
         let bubbleId = `tg-msg-${msg.messageId}`;
@@ -231,7 +641,6 @@
 
         let htmlContent = `<div>${formatTextWithCopy(msg.text)}</div>`;
         
-        // Render Tombol Inline
         if (msg.buttons && msg.buttons.length > 0) {
             htmlContent += `<div class="tg-keyboard">`;
             msg.buttons.forEach(row => {
@@ -249,9 +658,8 @@
         }
 
         if (existingBubble) {
-            existingBubble.innerHTML = htmlContent; // Update pesan (jika diedit bot)
+            existingBubble.innerHTML = htmlContent;
         } else {
-            // Buat pesan baru
             const div = document.createElement('div');
             div.id = bubbleId;
             div.className = `msg-bubble ${msg.isMe ? 'msg-out' : 'msg-in'}`;
@@ -260,7 +668,6 @@
         }
     }
 
-    // Pancing riwayat awal saat halaman dimuat
     setTimeout(() => { socket.emit('fetch_tg_history', activeTelegramBot); }, 1000);
 </script>
 </body>
