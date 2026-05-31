@@ -3,7 +3,6 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { TelegramClient, Api } = require('telegram');
 const { StringSession } = require('telegram/sessions');
-// [PERBAIKAN 1]: Mengimpor EditedMessage
 const { NewMessage, EditedMessage } = require('telegram/events'); 
 const mongoose = require('mongoose');
 
@@ -22,8 +21,6 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.static('public'));
-
-let activeNumber = "";
 
 const SessionSchema = new mongoose.Schema({
     sessionKey: { type: String, default: 'telegram_userbot' },
@@ -57,13 +54,15 @@ async function startSystem() {
             await SessionModel.create({ sessionKey: 'telegram_userbot', sessionString: ENV_SESSION });
         }
 
+        // Simpan Entity Bot secara global
+        let botEntity = null;
         let botIdStr = "";
         try {
-            const botEntity = await client.getEntity(BOT_USERNAME);
+            botEntity = await client.getEntity(BOT_USERNAME);
             botIdStr = botEntity.id.toString();
-            console.log(`[TG] Bot ID: ${botIdStr}`);
+            console.log(`[TG] Identitas Bot didapatkan. ID: ${botIdStr}`);
         } catch (e) {
-            console.error(`[TG ERROR] Gagal mendapatkan ID bot.`);
+            console.error(`[TG ERROR] Gagal mendapatkan identitas bot.`);
         }
 
         // --- FUNGSI PEMROSES PESAN BOT ---
@@ -72,12 +71,11 @@ async function startSystem() {
             const text = message.message || "";
             
             let chatIdStr = "";
-            if (message.peerId) {
-                if (message.peerId.userId) chatIdStr = message.peerId.userId.toString();
+            if (message.peerId && message.peerId.userId) {
+                chatIdStr = message.peerId.userId.toString();
             }
 
             if (chatIdStr === botIdStr) {
-                // Ekstrak Tombol Inline
                 let buttonsArr = [];
                 if (message.replyMarkup && message.replyMarkup.rows) {
                     message.replyMarkup.rows.forEach(row => {
@@ -93,7 +91,6 @@ async function startSystem() {
                     });
                 }
 
-                // Kirim ke Web
                 io.emit('bot_message', { 
                     messageId: message.id, 
                     text: text, 
@@ -103,36 +100,43 @@ async function startSystem() {
         };
 
         // --- EVENT HANDLERS ---
-        // 1. Menangkap pesan baru
         client.addEventHandler(async (event) => {
             processBotMessage(event.message);
         }, new NewMessage({ incoming: true }));
 
-        // [PERBAIKAN 2]: Menangkap pesan yang di-edit menggunakan event yang benar
         client.addEventHandler(async (event) => {
             processBotMessage(event.message);
         }, new EditedMessage({ incoming: true }));
 
+
         // --- SOCKET.IO WEB ---
         io.on('connection', (socket) => {
+            console.log('[WEB] Perangkat baru mengakses web dashboard.');
+
+            // Menggunakan botEntity saat mengirim pesan manual
             socket.on('send_command', async (command) => {
                 try {
-                    await client.sendMessage(BOT_USERNAME, { message: command });
+                    console.log(`[WEB] Mengirim pesan ke bot: ${command}`);
+                    await client.sendMessage(botEntity || BOT_USERNAME, { message: command });
+                    console.log(`[TG] Pesan berhasil dikirim ke Telegram!`);
                 } catch (err) {
-                    console.error('[TG ERROR]', err);
+                    console.error('[TG ERROR] Gagal mengirim pesan:', err);
                 }
             });
 
+            // Menggunakan botEntity saat menekan tombol inline
             socket.on('click_inline_button', async (payload) => {
                 try {
+                    console.log(`[WEB] Mengirim klik tombol untuk pesan ID ${payload.messageId}`);
                     const callbackData = Buffer.from(payload.data, 'base64');
                     await client.invoke(new Api.messages.GetBotCallbackAnswer({
-                        peer: BOT_USERNAME,
+                        peer: botEntity || BOT_USERNAME,
                         msgId: payload.messageId,
                         data: callbackData
                     }));
+                    console.log(`[TG] Klik tombol berhasil dikirim ke Telegram!`);
                 } catch (err) {
-                    console.error('[TG ERROR]', err);
+                    console.error('[TG ERROR] Gagal menekan tombol:', err);
                 }
             });
         });
