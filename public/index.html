@@ -1,139 +1,267 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Web UI Clone</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>FOERTA — Command Center</title>
+    <link rel="stylesheet" href="style.css?v=11.23">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0f0f0f; color: #fff; margin: 0; display: flex; justify-content: center; height: 100vh; }
-        .chat-container { display: flex; flex-direction: column; width: 100%; max-width: 600px; background: #1a1a1a; height: 100%; border-left: 1px solid #333; border-right: 1px solid #333; }
-        
-        .header { background: #282e33; padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #333; }
-        
-        .messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        
-        /* Bubble Chat Styling */
-        .message-bubble { background: #2b5278; padding: 12px; border-radius: 12px; max-width: 85%; align-self: flex-start; line-height: 1.5; white-space: pre-wrap; font-size: 15px;}
-        .user-bubble { background: #407b46; align-self: flex-end; }
-        
-        /* Inline Buttons Styling */
-        .keyboard-area { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
-        .btn-row { display: flex; gap: 5px; justify-content: space-between; }
-        .btn-inline { background: rgba(0, 0, 0, 0.3); color: #5eb5f7; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px; cursor: pointer; flex: 1; text-align: center; font-size: 14px; font-weight: 500; transition: background 0.2s; }
-        .btn-inline:hover { background: rgba(0, 0, 0, 0.5); }
-        .btn-loading { opacity: 0.6; pointer-events: none; }
-
-        /* Input Area */
-        .input-area { display: flex; padding: 15px; background: #282e33; gap: 10px; border-top: 1px solid #333;}
-        .input-area input { flex: 1; padding: 12px; border-radius: 20px; border: none; background: #1a1a1a; color: white; outline: none; font-size: 15px;}
-        .input-area button { background: #5eb5f7; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        /* ... (Semua style inline lama kamu tetap ada di sini) ... */
+        .hamburger-btn { display: none; }
+        @media (max-width: 768px) {
+            body { display: block !important; overflow-x: hidden; }
+            .hamburger-btn { display: block !important; background: var(--surface2); color: var(--cyan); padding: 15px; text-align: center; font-weight: bold; font-family: 'Syne', sans-serif; border-bottom: 2px solid var(--cyan); position: sticky; top: 0; z-index: 1000; cursor: pointer; font-size: 16px; letter-spacing: 2px; }
+            .sidebar { display: none !important; width: 100% !important; height: auto !important; position: static !important; border-right: none !important; padding: 15px !important; background: var(--bg) !important; }
+            .sidebar.show { display: flex !important; flex-direction: column !important; gap: 8px !important; }
+            .nav-item { display: block !important; text-align: center !important; padding: 14px 15px !important; margin: 0 !important; background: #1A1D24 !important; border-radius: 8px !important; border: 1px solid #2D323E !important; border-left: none !important; }
+            .nav-item .nav-text { display: block !important; font-size: 13px !important; font-weight: bold !important; color: #FFFFFF !important; }
+            .nav-item.active { background: var(--cyan) !important; border-color: var(--cyan) !important; }
+            .nav-item.active .nav-text { color: #000000 !important; }
+            .logo, .nav-sep { display: none !important; } 
+            .main { width: 100% !important; margin-left: 0 !important; padding: 15px !important; }
+            .header { flex-direction: column !important; gap: 10px !important; margin-top: 5px !important; }
+            .stat-pill { width: 100% !important; justify-content: space-between !important; }
+            .agent-grid { grid-template-columns: 1fr !important; }
+            .form-row { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+            .form-group { width: 100% !important; }
+            table.tbl { display: block !important; overflow-x: auto !important; white-space: nowrap !important; }
+            .login-box { padding: 25px 20px !important; width: 90% !important; margin: 0 auto; }
+        }
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #111318 0%, #070809 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        #login-overlay::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0, 210, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 210, 255, 0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
+        .login-wrapper { position: relative; z-index: 10; width: 100%; max-width: 380px; animation: fadeUp 0.6s ease-out; }
+        .login-brand { text-align: center; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .login-brand h2 { font-family: 'Syne', sans-serif; font-size: 46px; font-weight: 800; color: var(--cyan); letter-spacing: 4px; margin: 0; text-shadow: 0 0 20px rgba(0, 210, 255, 0.5); }
+        .version-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); letter-spacing: 2px; padding: 4px 10px; background: rgba(0, 210, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 20px; }
+        .login-box { background: rgba(17, 19, 24, 0.7); backdrop-filter: blur(12px); border: 1px solid var(--border); border-top: 3px solid var(--cyan); border-radius: 12px; padding: 40px 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        .login-alert { color: #ff4466; font-size: 12px; margin-bottom: 15px; padding: 10px; background: rgba(255, 68, 102, 0.1); border: 1px solid rgba(255, 68, 102, 0.3); border-radius: 6px; display: none; font-family: 'JetBrains Mono', monospace; text-align: center; }
+        .login-alert.success { color: var(--cyan); background: rgba(0, 210, 255, 0.1); border-color: rgba(0, 210, 255, 0.3); }
+        .login-box .input-group { margin-bottom: 20px; }
+        .login-box input[type="text"], .login-box input[type="password"] { width: 100%; padding: 14px 16px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px; transition: all 0.3s ease; }
+        .login-box input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 210, 255, 0.15); }
+        .btn-login { width: 100%; padding: 14px; background: var(--cyan); color: var(--bg); border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); margin-top: 5px; }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(0, 210, 255, 0.6); }
+        .login-footer { margin-top: 25px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .login-footer span { font-size: 11px; color: var(--text2); }
+        .btn-register { background: transparent; border: 1px solid var(--border); color: var(--text2); padding: 8px 24px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; cursor: pointer; transition: 0.3s; }
+        .btn-register:hover { border-color: var(--cyan); color: var(--cyan); }
+        .expire-alert { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--red); font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 12px; }
+        .key-desc { font-size: 11px; color: var(--text2); text-align: center; margin-bottom: 25px; line-height: 1.6; }
+        .admin-only { display: none !important; }
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: var(--surface2); border: 1px solid var(--border); border-left: 4px solid var(--cyan); color: var(--text); padding: 15px 20px; border-radius: 6px; box-shadow: 0 5px 20px rgba(0,0,0,0.6); animation: slideInRight 0.3s forwards; font-family: 'JetBrains Mono', monospace; font-size: 12px; min-width: 250px; pointer-events: auto; }
+        .toast.error { border-left-color: var(--red); }
+        .toast.success { border-left-color: var(--green); }
+        .toast.warning { border-left-color: var(--amber); }
+        @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOutAnim { to { opacity: 0; transform: translateY(-10px); } }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10001; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-box { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--cyan); border-radius: 8px; padding: 25px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.8); animation: fadeUp 0.3s ease-out; }
+        .modal-box p { font-size: 14px; margin-bottom: 25px; color: var(--text); font-family: 'Syne', sans-serif; font-weight: bold; line-height:1.5; }
+        .modal-btn-row { display: flex; gap: 10px; justify-content: center; }
+        .dual-list-container { display: flex; gap: 10px; margin-top: 10px; }
+        @media (max-width: 768px) { .dual-list-container { flex-direction: column; } }
+        .dl-box { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; height: 150px; overflow-y: auto; padding: 10px; }
+        .dl-title { font-size: 10px; color: var(--text2); margin-bottom: 8px; font-weight: bold; letter-spacing: 1px; }
+        .dl-item { background: var(--surface); padding: 8px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 11px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; color: #ffffff !important; font-weight: bold; }
+        .dl-item:hover { border-color: var(--cyan); }
+        .bc-banner { background: rgba(0, 210, 255, 0.1); border-left: 4px solid var(--cyan); padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+        .bc-date { font-size: 10px; color: var(--text2); display: block; margin-bottom: 5px; }
+        .pagination-container { display: flex; gap: 5px; margin-top: 10px; justify-content: center; }
+        .page-btn { padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .page-btn.active { background: var(--cyan); color: #000; border-color: var(--cyan); font-weight: bold; }
+        .search-box { width: 100%; padding: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; margin-bottom: 10px; font-family: monospace; }
+        .task-card { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--cyan); padding: 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .task-card.paused { border-left-color: var(--amber); opacity: 0.7; }
+        .local-log-box::-webkit-scrollbar { width: 6px; }
+        .local-log-box::-webkit-scrollbar-track { background: var(--bg); }
+        .local-log-box::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 3px; }
+        textarea.pastebin-input { width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-family: monospace; font-size: 11px; resize: vertical; min-height: 80px; }
+        textarea.pastebin-input:focus { outline: none; border-color: var(--cyan); }
     </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div class="header">
-            🤖 PBD x Panel (Full Web UI)
-        </div>
+<div class="modal-overlay" id="custom-modal"><div class="modal-box"><p id="modal-msg">Apakah Anda yakin?</p><div class="modal-btn-row"><button class="btn btn-outline" onclick="closeModal(false)">Batal</button><button class="btn btn-cyan" onclick="closeModal(true)" id="modal-btn-yes">Ya, Lanjutkan</button></div></div></div>
+<div id="toast-container"></div>
 
-        <div class="messages-area" id="messagesArea">
-            <div class="message-bubble">Koneksi berhasil! Ketik pesan (misal: Get Number atau /start) untuk memulai interaksi dengan bot.</div>
-        </div>
+<div class="hamburger-btn" onclick="toggleSidebar()">☰ MENU FOERTA</div>
 
-        <div class="input-area">
-            <input type="text" id="cmdInput" placeholder="Ketik pesan..." onkeypress="handleEnter(event)">
-            <button onclick="sendCommand()">Kirim</button>
+<nav class="sidebar" id="sidebar">
+  <div class="logo"><h2>FOERTA</h2><span id="user-info-text">User</span></div>
+  <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="nav-text">❖ Dashboard</span></div>
+  <div class="nav-item" data-page="tasks" onclick="showPage('tasks')"><span class="nav-text">⚙️ Running Tasks</span></div>
+  <div class="nav-item" data-page="agents" onclick="showPage('agents')"><span class="nav-text">👥 Sesi Aktif</span></div>
+  
+  <div class="nav-item" data-page="botpanel" onclick="showPage('botpanel')"><span class="nav-text">🤖 Panel Bot OTP</span></div>
+  
+  <div class="nav-sep"></div>
+  <div class="nav-item" data-page="automation" onclick="showPage('automation')"><span class="nav-text">🚀 Automation</span></div>
+  <div class="nav-item" data-page="tools" onclick="showPage('tools')"><span class="nav-text">🛠️ Tools</span></div>
+  <div class="nav-sep"></div>
+  <div class="nav-item admin-only" data-page="admin" onclick="showPage('admin')"><span class="nav-text">👑 Panel Admin</span></div>
+  <div class="nav-item" onclick="doLogout()"><span class="nav-text" style="color:var(--red)">🚪 Logout</span></div>
+</nav>
+
+<div class="main">
+  <div class="header">
+    <div class="stat-pill cyan"><span class="val" id="h-db">0</span><span>Total Sesi DB</span></div>
+    <div class="stat-pill green"><span class="val" id="h-active">0</span><span>Sesi Aktif</span></div>
+  </div>
+
+  <div class="content">
+    
+    <div class="page" id="page-botpanel">
+        <div class="card fade-in" style="display:flex; flex-direction:column; height: 80vh;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3>Telegram Bot Controller</h3>
+                <span style="font-size:11px; color:var(--text2);">Auto-Sync History & Auto-Copy Number</span>
+            </div>
+            
+            <div class="bot-tabs">
+                <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">PBD Panel</button>
+                <button class="bot-tab" onclick="switchBot('@BotOTP2', this)">Bot OTP 2</button>
+                <button class="bot-tab" onclick="switchBot('@BotOTP3', this)">Bot OTP 3</button>
+            </div>
+
+            <div class="chat-wrapper">
+                <div class="messages-area" id="tgMessagesArea">
+                    <div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>
+                </div>
+                
+                <div class="chat-action-area">
+                    <button class="btn btn-cyan" style="width:100%; padding:14px; font-size:14px; font-weight:bold;" onclick="sendTelegramCommand('/start')">▶ MULAI BOT (/start)</button>
+                </div>
+            </div>
         </div>
     </div>
+    
+    <div class="page active" id="page-dashboard"> ... </div>
+  </div>
+</div>
 
-    <script>
-        const socket = io();
-        const messagesArea = document.getElementById('messagesArea');
-        const cmdInput = document.getElementById('cmdInput');
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js?v=11.23"></script>
 
-        function scrollToBottom() {
-            messagesArea.scrollTop = messagesArea.scrollHeight;
-        }
+<script>
+    let activeTelegramBot = '@PBDxbot';
 
-        function handleEnter(e) {
-            if (e.key === 'Enter') sendCommand();
-        }
+    // Pindah Tab Bot
+    function switchBot(botUsername, btnElement) {
+        activeTelegramBot = botUsername;
+        
+        // Update UI Tab Active
+        document.querySelectorAll('.bot-tab').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+        
+        // Bersihkan layar dan minta riwayat dari server
+        document.getElementById('tgMessagesArea').innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>';
+        socket.emit('fetch_tg_history', botUsername);
+    }
 
-        function sendCommand() {
-            const cmd = cmdInput.value;
-            if(cmd.trim() !== "") {
-                // Tampilkan pesan pengguna di kanan
-                const userBubble = document.createElement('div');
-                userBubble.className = 'message-bubble user-bubble';
-                userBubble.innerText = cmd;
-                messagesArea.appendChild(userBubble);
-                scrollToBottom();
+    // Scroll ke bawah
+    function scrollTgBottom() {
+        const area = document.getElementById('tgMessagesArea');
+        area.scrollTop = area.scrollHeight;
+    }
 
-                socket.emit('send_command', cmd);
-                cmdInput.value = "";
-            }
-        }
+    // Kirim Perintah Start
+    function sendTelegramCommand(cmd) {
+        // Tampilkan bubble user
+        const area = document.getElementById('tgMessagesArea');
+        area.innerHTML += `<div class="msg-bubble msg-out">${cmd}</div>`;
+        scrollTgBottom();
+        
+        socket.emit('send_tg_command', { target: activeTelegramBot, command: cmd });
+    }
 
-        // Menerima pesan (dan editan pesan) dari bot
-        socket.on('bot_message', (payload) => {
-            
-            // Cek apakah div pesan dengan ID ini sudah ada (artinya pesan ini hasil editan)
-            let botBubble = document.getElementById(`msg-${payload.messageId}`);
-            let isNewMessage = false;
+    // Eksekusi Tombol Inline
+    function clickTgInline(msgId, dataBase64, btnElement) {
+        btnElement.style.opacity = '0.5';
+        btnElement.innerText = '⏳';
+        socket.emit('click_tg_inline', { target: activeTelegramBot, messageId: msgId, data: dataBase64 });
+    }
 
-            if (!botBubble) {
-                // Jika belum ada, buat gelembung baru
-                botBubble = document.createElement('div');
-                botBubble.className = 'message-bubble';
-                botBubble.id = `msg-${payload.messageId}`;
-                isNewMessage = true;
-            }
-
-            // Atur isi konten pesan (Teks + Tombol)
-            let bubbleContent = `<div>${payload.text}</div>`;
-            
-            // Render Tombol Inline
-            if (payload.buttons && payload.buttons.length > 0) {
-                bubbleContent += `<div class="keyboard-area">`;
-                payload.buttons.forEach((row, rowIndex) => {
-                    bubbleContent += `<div class="btn-row">`;
-                    row.forEach((btn, btnIndex) => {
-                        // Gunakan stringifikasi data untuk onclick function
-                        const safeData = btn.data ? `'${btn.data}'` : 'null';
-                        const safeUrl = btn.url ? `'${btn.url}'` : 'null';
-                        
-                        bubbleContent += `<button class="btn-inline" onclick="clickBtn(${payload.messageId}, ${safeData}, ${safeUrl}, this)">${btn.text}</button>`;
-                    });
-                    bubbleContent += `</div>`;
-                });
-                bubbleContent += `</div>`;
-            }
-
-            // Update atau Masukkan ke layar
-            botBubble.innerHTML = bubbleContent;
-
-            if (isNewMessage) {
-                messagesArea.appendChild(botBubble);
-            }
-            scrollToBottom();
+    // Fitur Auto-Copy Nomor
+    function copyNumber(numStr) {
+        navigator.clipboard.writeText(numStr).then(() => {
+            alert(`Nomor ${numStr} berhasil disalin ke clipboard!`);
         });
+    }
 
-        // Fungsi klik tombol
-        function clickBtn(msgId, data, url, btnElement) {
-            if (url) {
-                window.open(url, '_blank');
-            } else if (data) {
-                // Efek loading saat ditekan
-                btnElement.classList.add('btn-loading');
-                btnElement.innerText = "⏳ Memproses...";
-                
-                socket.emit('click_inline_button', {
-                    messageId: msgId,
-                    data: data
-                });
-            }
+    // Parsing Teks untuk Highlight Nomor
+    function formatTextWithCopy(text) {
+        // Mencari pola nomor telepon dengan Regex (Opsional diawali +, lalu angka panjang)
+        return text.replace(/(\+?\d{10,15})/g, '<span class="copyable-num" onclick="copyNumber(\'$1\')">$1</span>');
+    }
+
+    // Menerima Riwayat Penuh dari Server (Saat refresh atau ganti tab)
+    socket.on('tg_history', (payload) => {
+        if (payload.bot !== activeTelegramBot) return; // Abaikan jika tab sudah diganti
+        
+        const area = document.getElementById('tgMessagesArea');
+        area.innerHTML = '';
+        
+        if (payload.messages.length === 0) {
+            area.innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Belum ada riwayat chat. Tekan tombol Mulai di bawah.</div>';
+            return;
         }
-    </script>
+
+        payload.messages.forEach(msg => {
+            renderTgMessage(msg);
+        });
+        scrollTgBottom();
+    });
+
+    // Menerima Pesan Baru / Update Pesan dari Server
+    socket.on('tg_message_update', (msg) => {
+        if (msg.bot !== activeTelegramBot) return;
+        renderTgMessage(msg, true);
+        scrollTgBottom();
+    });
+
+    // Render Gelembung Chat
+    function renderTgMessage(msg, isUpdate = false) {
+        const area = document.getElementById('tgMessagesArea');
+        let bubbleId = `tg-msg-${msg.messageId}`;
+        let existingBubble = document.getElementById(bubbleId);
+
+        let htmlContent = `<div>${formatTextWithCopy(msg.text)}</div>`;
+        
+        // Render Tombol Inline
+        if (msg.buttons && msg.buttons.length > 0) {
+            htmlContent += `<div class="tg-keyboard">`;
+            msg.buttons.forEach(row => {
+                htmlContent += `<div class="tg-btn-row">`;
+                row.forEach(btn => {
+                    if (btn.url) {
+                        htmlContent += `<button class="tg-btn-inline" onclick="window.open('${btn.url}', '_blank')">${btn.text}</button>`;
+                    } else if (btn.data) {
+                        htmlContent += `<button class="tg-btn-inline" onclick="clickTgInline(${msg.messageId}, '${btn.data}', this)">${btn.text}</button>`;
+                    }
+                });
+                htmlContent += `</div>`;
+            });
+            htmlContent += `</div>`;
+        }
+
+        if (existingBubble) {
+            existingBubble.innerHTML = htmlContent; // Update pesan (jika diedit bot)
+        } else {
+            // Buat pesan baru
+            const div = document.createElement('div');
+            div.id = bubbleId;
+            div.className = `msg-bubble ${msg.isMe ? 'msg-out' : 'msg-in'}`;
+            div.innerHTML = htmlContent;
+            area.appendChild(div);
+        }
+    }
+
+    // Pancing riwayat awal saat halaman dimuat
+    setTimeout(() => { socket.emit('fetch_tg_history', activeTelegramBot); }, 1000);
+</script>
 </body>
 </html>
