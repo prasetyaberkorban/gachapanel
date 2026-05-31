@@ -66,7 +66,9 @@ async function startSystem() {
                         rowButtons.push({
                             text: btn.text,
                             data: btn.data ? btn.data.toString('base64') : null, 
-                            url: btn.url || null
+                            url: btn.url || null,
+                            copyText: btn.copyText || null, // Menangkap data tombol Copy
+                            className: btn.className // Menangkap tipe tombol (Keyboard Biasa vs Inline)
                         });
                     });
                     buttonsArr.push(rowButtons);
@@ -93,7 +95,7 @@ async function startSystem() {
             }
         }, new NewMessage({ incoming: true, outgoing: true }));
 
-        // EVENT: Pesan Di-Edit (Diperkuat untuk mendeteksi data yang dibungkus Array)
+        // EVENT: Pesan Di-Edit 
         client.addEventHandler(async (update) => {
             let updatesToProcess = [];
             if (update.updates) updatesToProcess = update.updates;
