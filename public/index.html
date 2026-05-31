@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel OTP Pribadi</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1e1e1e; color: white; padding: 20px; }
+        .box { background: #2d2d2d; padding: 20px; border-radius: 8px; max-width: 400px; margin: 0 auto; text-align: center; }
+        button { background: #8a2be2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%;}
+        button:hover { background: #7a1fd1; }
+        .result { margin-top: 20px; font-size: 18px; }
+        .otp { font-size: 24px; font-weight: bold; color: #4caf50; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Panel Nomor Virtual</h2>
+        <button id="btnGetNumber">Get Number</button>
+        
+        <div class="result">
+            <p>Nomor: <span id="displayNumber">-</span></p>
+            <p>Status: <span id="displayStatus">Menunggu perintah...</span></p>
+            <div class="otp" id="displayOtp">-</div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        
+        const btnGetNumber = document.getElementById('btnGetNumber');
+        const displayNumber = document.getElementById('displayNumber');
+        const displayStatus = document.getElementById('displayStatus');
+        const displayOtp = document.getElementById('displayOtp');
+
+        // Memicu request dari web ke backend
+        btnGetNumber.addEventListener('click', () => {
+            displayNumber.innerText = "Memproses...";
+            displayStatus.innerText = "Mengeksekusi bot...";
+            displayOtp.innerText = "-";
+            socket.emit('request_number');
+        });
+
+        // Menerima nomor dari backend
+        socket.on('number_received', (number) => {
+            displayNumber.innerText = number;
+            displayStatus.innerText = "Menunggu OTP dari grup...";
+        });
+
+        // Menerima OTP dari backend
+        socket.on('otp_received', (otp) => {
+            displayStatus.innerText = "OTP Berhasil didapat!";
+            displayOtp.innerText = otp;
+        });
+    </script>
+</body>
+</html>
