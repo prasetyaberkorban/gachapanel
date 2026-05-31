@@ -6,12 +6,14 @@ const { StringSession } = require('telegram/sessions');
 const { NewMessage } = require('telegram/events');
 const mongoose = require('mongoose');
 
+// Konfigurasi Environment Variables
 const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 31303511; 
 const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550'; 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
 const PORT = process.env.PORT || 3000;
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
+// DAFTAR BOT YANG DIDUKUNG
 const TARGET_BOTS = ['@PBDxbot', '@BotOTP2', '@BotOTP3']; 
 
 const app = express();
@@ -46,6 +48,7 @@ async function startSystem() {
             await SessionModel.create({ sessionKey: 'telegram_userbot', sessionString: ENV_SESSION });
         }
 
+        // Cache ID Bot
         let botEntities = {};
         for (let b of TARGET_BOTS) {
             try {
@@ -54,7 +57,6 @@ async function startSystem() {
             } catch (e) {}
         }
 
-        // FUNGSI PARSING AMAN
         const parseMessageData = (msg) => {
             let buttonsArr = [];
             if (msg.replyMarkup && msg.replyMarkup.rows) {
@@ -72,14 +74,13 @@ async function startSystem() {
             }
             return {
                 messageId: msg.id,
-                // Mengambil teks dengan fallback ganda
-                text: msg.text || msg.message || "", 
+                text: msg.message || msg.text || "",
                 buttons: buttonsArr,
                 isMe: msg.out 
             };
         };
 
-        // PESAN BARU
+        // EVENT: Pesan Baru
         client.addEventHandler(async (event) => {
             const msg = event.message;
             if (!msg || !msg.peerId || !msg.peerId.userId) return;
@@ -92,17 +93,29 @@ async function startSystem() {
             }
         }, new NewMessage({ incoming: true, outgoing: true }));
 
-        // PESAN DI-EDIT (Deteksi Super Kuat)
+        // EVENT: Pesan Di-Edit (Diperkuat untuk mendeteksi data yang dibungkus Array)
         client.addEventHandler(async (update) => {
-            if (update.className === 'UpdateEditMessage' || update.className === 'UpdateEditChannelMessage') {
-                const msg = update.message;
-                if (!msg || !msg.peerId) return;
-                
-                let senderId = msg.peerId.userId ? msg.peerId.userId.toString() : "";
-                if (senderId && botEntities[senderId]) {
-                    const parsed = parseMessageData(msg);
-                    parsed.bot = botEntities[senderId].username;
-                    io.emit('tg_message_update', parsed);
+            let updatesToProcess = [];
+            if (update.updates) updatesToProcess = update.updates;
+            else if (update.className) updatesToProcess = [update];
+
+            for (const u of updatesToProcess) {
+                if (u.className === 'UpdateEditMessage' || u.className === 'UpdateEditChannelMessage') {
+                    const msg = u.message;
+                    if (!msg) continue;
+                    
+                    let senderId = "";
+                    if (msg.peerId && msg.peerId.userId) {
+                        senderId = msg.peerId.userId.toString();
+                    } else if (msg.peerId && msg.peerId.className === 'PeerUser') {
+                        senderId = msg.peerId.userId.toString();
+                    }
+
+                    if (senderId && botEntities[senderId]) {
+                        const parsed = parseMessageData(msg);
+                        parsed.bot = botEntities[senderId].username;
+                        io.emit('tg_message_update', parsed);
+                    }
                 }
             }
         });
