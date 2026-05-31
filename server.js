@@ -6,6 +6,7 @@ const { StringSession } = require('telegram/sessions');
 const { NewMessage } = require('telegram/events');
 const mongoose = require('mongoose');
 
+// Konfigurasi Environment Variables
 const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 31303511; 
 const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550'; 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
