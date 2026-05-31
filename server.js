@@ -3,10 +3,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { TelegramClient, Api } = require('telegram');
 const { StringSession } = require('telegram/sessions');
-const { NewMessage } = require('telegram/events'); // Tambahan untuk mendeteksi pesan masuk & edit
+// [PERBAIKAN 1]: Mengimpor EditedMessage
+const { NewMessage, EditedMessage } = require('telegram/events'); 
 const mongoose = require('mongoose');
 
-// Konfigurasi
+// Konfigurasi Environment Variables
 const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 31303511; 
 const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550'; 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
@@ -70,7 +71,6 @@ async function startSystem() {
             if (!message) return;
             const text = message.message || "";
             
-            // Cek apakah pesan dari bot target
             let chatIdStr = "";
             if (message.peerId) {
                 if (message.peerId.userId) chatIdStr = message.peerId.userId.toString();
@@ -93,7 +93,7 @@ async function startSystem() {
                     });
                 }
 
-                // Kirim ke Web (beserta ID pesan agar web tahu jika ini pesan yang di-edit)
+                // Kirim ke Web
                 io.emit('bot_message', { 
                     messageId: message.id, 
                     text: text, 
@@ -103,16 +103,15 @@ async function startSystem() {
         };
 
         // --- EVENT HANDLERS ---
-        // 1. Menangkap pesan baru dari bot
+        // 1. Menangkap pesan baru
         client.addEventHandler(async (event) => {
             processBotMessage(event.message);
         }, new NewMessage({ incoming: true }));
 
-        // 2. Menangkap pesan yang di-edit oleh bot (Misal: status Waiting OTP berubah)
+        // [PERBAIKAN 2]: Menangkap pesan yang di-edit menggunakan event yang benar
         client.addEventHandler(async (event) => {
             processBotMessage(event.message);
-        }, new NewMessage({ edited: true }));
-
+        }, new EditedMessage({ incoming: true }));
 
         // --- SOCKET.IO WEB ---
         io.on('connection', (socket) => {
