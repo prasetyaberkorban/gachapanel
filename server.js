@@ -11,11 +11,11 @@ const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
 const PORT = process.env.PORT || 3000;
 
-// Sesi dari Heroku Config Vars (hasil dari login.js tadi)
+// Sesi dari Heroku Config Vars
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
 // Konfigurasi Target Telegram
-const BOT_USERNAME = '@PBDxbot';
+const BOT_USERNAME = '@PBDxbot'; // PASTIKAN INI USERNAME ASLI BOTNYA
 const OTP_GROUP_ID = -2638899812; 
 
 const app = express();
@@ -26,7 +26,6 @@ app.use(express.static('public'));
 
 let activeNumber = "";
 
-// Skema Database MongoDB
 const SessionSchema = new mongoose.Schema({
     sessionKey: { type: String, default: 'telegram_userbot' },
     sessionString: String
@@ -34,11 +33,9 @@ const SessionSchema = new mongoose.Schema({
 const SessionModel = mongoose.model('TelegramSession', SessionSchema);
 
 async function startSystem() {
-    // 1. Jalankan server web 
     server.listen(PORT, () => console.log(`[WEB] Server web berjalan di port ${PORT}`));
 
     try {
-        // 2. Koneksi ke Database
         await mongoose.connect(MONGODB_URI);
         console.log('[DB] Terhubung ke MongoDB.');
 
@@ -50,7 +47,6 @@ async function startSystem() {
             return;
         }
 
-        // 3. Inisialisasi Klien Telegram
         const stringSession = new StringSession(sessionString);
         const client = new TelegramClient(stringSession, API_ID, API_HASH, { connectionRetries: 5 });
 
@@ -63,23 +59,38 @@ async function startSystem() {
             console.log('[DB] String Session dari Heroku berhasil di-backup ke MongoDB!');
         }
 
+        // [PERBAIKAN] Dapatkan ID numerik dari Bot secara otomatis
+        let botIdStr = "";
+        try {
+            const botEntity = await client.getEntity(BOT_USERNAME);
+            botIdStr = botEntity.id.toString();
+            console.log(`[TG] Bot ${BOT_USERNAME} berhasil diidentifikasi dengan ID: ${botIdStr}`);
+        } catch (e) {
+            console.error(`[TG ERROR] Gagal mendapatkan ID bot ${BOT_USERNAME}. Pastikan username-nya benar dan akun kamu pernah nge-chat bot ini!`);
+        }
+
         // --- LISTENER TELEGRAM ---
         client.addEventHandler(async (event) => {
             const message = event.message;
             if (!message) return;
 
             const text = message.message || ""; 
-            const chatIdStr = message.chatId ? message.chatId.toString() : "";
+            
+            // Ekstrak Chat ID dengan aman
+            let chatIdStr = "";
+            if (message.peerId) {
+                if (message.peerId.userId) chatIdStr = message.peerId.userId.toString();
+                else if (message.peerId.channelId) chatIdStr = "-100" + message.peerId.channelId.toString();
+                else if (message.peerId.chatId) chatIdStr = "-" + message.peerId.chatId.toString();
+            }
 
             // A. Interaksi dengan Bot Panel (FULL CONTROL)
-            if (chatIdStr === BOT_USERNAME.replace('@', '')) {
-                // Ekstrak Nomor
+            if (chatIdStr === botIdStr) {
                 const numberMatch = text.match(/\+?\d{10,15}/);
                 if (numberMatch && text.includes('WhatsApp Number Assigned')) {
                     activeNumber = numberMatch[0];
                 }
 
-                // Ekstrak Tombol Inline
                 let buttonsArr = [];
                 if (message.replyMarkup && message.replyMarkup.rows) {
                     message.replyMarkup.rows.forEach(row => {
@@ -95,7 +106,7 @@ async function startSystem() {
                     });
                 }
 
-                console.log(`[TG] Menerima pesan dari Bot. Mengirim ke panel web...`);
+                console.log(`[TG] Menerima balasan dari Bot. Menampilkan ke web...`);
                 io.emit('bot_message', { 
                     messageId: message.id, 
                     text: text, 
@@ -105,8 +116,8 @@ async function startSystem() {
             }
 
             // B. Filter OTP dari Grup
-            if (chatIdStr === OTP_GROUP_ID.toString() && activeNumber !== "") {
-                if (text.includes(activeNumber)) {
+            if (chatIdStr === OTP_GROUP_ID.toString() || chatIdStr === OTP_GROUP_ID.toString().replace('-100', '')) {
+                if (activeNumber !== "" && text.includes(activeNumber)) {
                     const otpMatch = text.match(/(?:code|otp)[\s\S]*?(\d{4,6})/i);
                     if (otpMatch) {
                         io.emit('otp_received', { number: activeNumber, otp: otpMatch[1] });
@@ -117,18 +128,15 @@ async function startSystem() {
 
         // --- SOCKET.IO LISTENER ---
         io.on('connection', (socket) => {
-            console.log('[WEB] Client web terhubung.');
-            
-            // Perintah teks manual ke bot
             socket.on('send_command', async (command) => {
                 try {
+                    console.log(`[WEB] Mengirim teks ke bot: ${command}`);
                     await client.sendMessage(BOT_USERNAME, { message: command });
                 } catch (err) {
                     console.error('[TG ERROR] Gagal mengirim perintah:', err);
                 }
             });
 
-            // Klik tombol inline
             socket.on('click_inline_button', async (payload) => {
                 try {
                     console.log(`[TG] Menekan tombol pada pesan ID ${payload.messageId}...`);
