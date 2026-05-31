@@ -1,0 +1,24 @@
+/* --- TELEGRAM BOT UI ADDITIONS --- */
+.bot-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+.bot-tab { background: transparent; color: var(--text2); border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: bold; font-size: 12px; transition: 0.3s; }
+.bot-tab:hover { background: rgba(0, 210, 255, 0.05); color: var(--text); }
+.bot-tab.active { background: rgba(0, 210, 255, 0.15); color: var(--cyan); border: 1px solid var(--cyan); }
+
+.chat-wrapper { flex: 1; display: flex; flex-direction: column; background: #0b0c0f; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+.messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.chat-action-area { padding: 15px; background: var(--surface); border-top: 1px solid var(--border); }
+
+/* Chat Bubbles */
+.msg-bubble { padding: 12px 16px; border-radius: 12px; max-width: 85%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; }
+.msg-in { background: #2b5278; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
+.msg-out { background: #407b46; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+/* Inline Keyboard */
+.tg-keyboard { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.tg-btn-row { display: flex; gap: 6px; justify-content: space-between; }
+.tg-btn-inline { background: rgba(0, 0, 0, 0.3); color: #5eb5f7; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; cursor: pointer; flex: 1; text-align: center; font-size: 11px; font-weight: bold; transition: 0.2s; font-family: 'JetBrains Mono', monospace; }
+.tg-btn-inline:hover { background: rgba(0, 210, 255, 0.2); border-color: var(--cyan); }
+
+/* Auto-Copy Number Highlight */
+.copyable-num { background: rgba(0, 210, 255, 0.15); color: var(--cyan); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; text-decoration: underline dashed; }
+.copyable-num:hover { background: var(--cyan); color: #000; }
