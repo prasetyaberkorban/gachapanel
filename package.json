@@ -1,0 +1,20 @@
+{
+  "name": "panel-otp-telegram",
+  "version": "1.0.0",
+  "description": "Panel Web untuk otomatisasi bot Telegram PBD OTP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "input": "^1.0.1",
+    "mongoose": "^8.3.2",
+    "socket.io": "^4.7.5",
+    "telegram": "^2.22.2"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
