@@ -3,7 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { TelegramClient, Api } = require('telegram');
 const { StringSession } = require('telegram/sessions');
-const { NewMessage, EditedMessage } = require('telegram/events'); 
+const { NewMessage } = require('telegram/events'); // Hapus EditedMessage
 const mongoose = require('mongoose');
 
 // Konfigurasi Environment Variables
@@ -70,9 +70,12 @@ async function startSystem() {
             if (!message) return;
             const text = message.message || "";
             
+            // Cek pengirim pesan
             let chatIdStr = "";
-            if (message.peerId && message.peerId.userId) {
-                chatIdStr = message.peerId.userId.toString();
+            if (message.peerId) {
+                if (message.peerId.userId) chatIdStr = message.peerId.userId.toString();
+                // Antisipasi struktur Raw Update
+                else if (message.peerId.className === 'PeerUser') chatIdStr = message.peerId.userId.toString(); 
             }
 
             if (chatIdStr === botIdStr) {
@@ -100,41 +103,44 @@ async function startSystem() {
         };
 
         // --- EVENT HANDLERS ---
+        
+        // 1. Menangkap pesan BARU dari bot
         client.addEventHandler(async (event) => {
             processBotMessage(event.message);
         }, new NewMessage({ incoming: true }));
 
-        client.addEventHandler(async (event) => {
-            processBotMessage(event.message);
-        }, new EditedMessage({ incoming: true }));
+        // 2. Menangkap pesan DIEDIT menggunakan metode Raw API (Anti-Crash)
+        client.addEventHandler(async (update) => {
+            if (update.className === 'UpdateEditMessage' || update.className === 'UpdateEditChannelMessage') {
+                processBotMessage(update.message);
+            }
+        });
 
 
         // --- SOCKET.IO WEB ---
         io.on('connection', (socket) => {
             console.log('[WEB] Perangkat baru mengakses web dashboard.');
 
-            // Menggunakan botEntity saat mengirim pesan manual
             socket.on('send_command', async (command) => {
                 try {
                     console.log(`[WEB] Mengirim pesan ke bot: ${command}`);
                     await client.sendMessage(botEntity || BOT_USERNAME, { message: command });
-                    console.log(`[TG] Pesan berhasil dikirim ke Telegram!`);
+                    console.log(`[TG] Pesan berhasil dikirim!`);
                 } catch (err) {
                     console.error('[TG ERROR] Gagal mengirim pesan:', err);
                 }
             });
 
-            // Menggunakan botEntity saat menekan tombol inline
             socket.on('click_inline_button', async (payload) => {
                 try {
-                    console.log(`[WEB] Mengirim klik tombol untuk pesan ID ${payload.messageId}`);
+                    console.log(`[WEB] Mengirim klik tombol (Pesan ID: ${payload.messageId})`);
                     const callbackData = Buffer.from(payload.data, 'base64');
                     await client.invoke(new Api.messages.GetBotCallbackAnswer({
                         peer: botEntity || BOT_USERNAME,
                         msgId: payload.messageId,
                         data: callbackData
                     }));
-                    console.log(`[TG] Klik tombol berhasil dikirim ke Telegram!`);
+                    console.log(`[TG] Tombol berhasil ditekan!`);
                 } catch (err) {
                     console.error('[TG ERROR] Gagal menekan tombol:', err);
                 }
