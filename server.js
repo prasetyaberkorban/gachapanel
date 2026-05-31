@@ -6,8 +6,8 @@ const { StringSession } = require('telegram/sessions');
 const mongoose = require('mongoose');
 
 // Konfigurasi Environment Variables
-const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 1234567; // GANTI JIKA RUN LOKAL
-const API_HASH = process.env.TELEGRAM_API_HASH || 'YOUR_API_HASH'; // GANTI JIKA RUN LOKAL
+const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 31303511; // GANTI JIKA RUN LOKAL
+const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550'; // GANTI JIKA RUN LOKAL
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
 const PORT = process.env.PORT || 3000;
 
@@ -16,7 +16,7 @@ const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
 // Konfigurasi Target Telegram
 const BOT_USERNAME = '@PBDxbot';
-const OTP_GROUP_ID = -100123456789; // WAJIB GANTI DENGAN ID GRUP ASLI
+const OTP_GROUP_ID = -2638899812; // WAJIB GANTI DENGAN ID GRUP ASLI
 
 const app = express();
 const server = http.createServer(app);
