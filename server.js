@@ -3,18 +3,17 @@ const http = require('http');
 const { Server } = require('socket.io');
 const { TelegramClient, Api } = require('telegram');
 const { StringSession } = require('telegram/sessions');
-const { NewMessage } = require('telegram/events'); // Hapus EditedMessage
+const { NewMessage } = require('telegram/events');
 const mongoose = require('mongoose');
 
-// Konfigurasi Environment Variables
 const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 31303511; 
 const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550'; 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
 const PORT = process.env.PORT || 3000;
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
-const BOT_USERNAME = '@PBDxbot';
-const OTP_GROUP_ID = -2638899812; 
+// DAFTAR BOT YANG DIDUKUNG (Tab Multi-Bot)
+const TARGET_BOTS = ['@PBDxbot', '@BotOTP2', '@BotOTP3']; 
 
 const app = express();
 const server = http.createServer(app);
@@ -33,123 +32,117 @@ async function startSystem() {
 
     try {
         await mongoose.connect(MONGODB_URI);
-        console.log('[DB] Terhubung ke MongoDB.');
-
+        
         let savedSession = await SessionModel.findOne({ sessionKey: 'telegram_userbot' });
         let sessionString = savedSession ? savedSession.sessionString : ENV_SESSION;
 
-        if (!sessionString) {
-            console.error('[TG ERROR] String Session tidak ditemukan!');
-            return;
-        }
+        if (!sessionString) return console.error('[TG ERROR] String Session tidak ditemukan!');
 
-        const stringSession = new StringSession(sessionString);
-        const client = new TelegramClient(stringSession, API_ID, API_HASH, { connectionRetries: 5 });
+        const client = new TelegramClient(new StringSession(sessionString), API_ID, API_HASH, { connectionRetries: 5 });
 
-        console.log('[TG] Menghubungkan ke Telegram...');
         await client.connect(); 
-        console.log('[TG] Connected!');
+        console.log('[TG] Connected to Telegram (Background Mode)!');
 
         if (!savedSession && ENV_SESSION) {
             await SessionModel.create({ sessionKey: 'telegram_userbot', sessionString: ENV_SESSION });
         }
 
-        // Simpan Entity Bot secara global
-        let botEntity = null;
-        let botIdStr = "";
-        try {
-            botEntity = await client.getEntity(BOT_USERNAME);
-            botIdStr = botEntity.id.toString();
-            console.log(`[TG] Identitas Bot didapatkan. ID: ${botIdStr}`);
-        } catch (e) {
-            console.error(`[TG ERROR] Gagal mendapatkan identitas bot.`);
+        // Cache ID dari multi-bots untuk filter cepat
+        let botEntities = {};
+        for (let b of TARGET_BOTS) {
+            try {
+                let entity = await client.getEntity(b);
+                botEntities[entity.id.toString()] = { username: b, entity: entity };
+            } catch (e) {}
         }
 
-        // --- FUNGSI PEMROSES PESAN BOT ---
-        const processBotMessage = (message) => {
-            if (!message) return;
-            const text = message.message || "";
-            
-            // Cek pengirim pesan
-            let chatIdStr = "";
-            if (message.peerId) {
-                if (message.peerId.userId) chatIdStr = message.peerId.userId.toString();
-                // Antisipasi struktur Raw Update
-                else if (message.peerId.className === 'PeerUser') chatIdStr = message.peerId.userId.toString(); 
-            }
-
-            if (chatIdStr === botIdStr) {
-                let buttonsArr = [];
-                if (message.replyMarkup && message.replyMarkup.rows) {
-                    message.replyMarkup.rows.forEach(row => {
-                        let rowButtons = [];
-                        row.buttons.forEach(btn => {
-                            rowButtons.push({
-                                text: btn.text,
-                                data: btn.data ? btn.data.toString('base64') : null, 
-                                url: btn.url || null
-                            });
+        // Fungsi Parsing Pesan Telegram ke Format JSON Web
+        const parseMessageData = (msg) => {
+            let buttonsArr = [];
+            if (msg.replyMarkup && msg.replyMarkup.rows) {
+                msg.replyMarkup.rows.forEach(row => {
+                    let rowButtons = [];
+                    row.buttons.forEach(btn => {
+                        rowButtons.push({
+                            text: btn.text,
+                            data: btn.data ? btn.data.toString('base64') : null, 
+                            url: btn.url || null
                         });
-                        buttonsArr.push(rowButtons);
                     });
-                }
-
-                io.emit('bot_message', { 
-                    messageId: message.id, 
-                    text: text, 
-                    buttons: buttonsArr 
+                    buttonsArr.push(rowButtons);
                 });
             }
+            return {
+                messageId: msg.id,
+                text: msg.message || "",
+                buttons: buttonsArr,
+                isMe: msg.out // true jika kita yg kirim, false jika bot
+            };
         };
 
-        // --- EVENT HANDLERS ---
-        
-        // 1. Menangkap pesan BARU dari bot
+        // Event: Pesan Baru
         client.addEventHandler(async (event) => {
-            processBotMessage(event.message);
-        }, new NewMessage({ incoming: true }));
+            const msg = event.message;
+            if (!msg || !msg.peerId || !msg.peerId.userId) return;
+            
+            let senderId = msg.peerId.userId.toString();
+            if (botEntities[senderId]) {
+                const parsed = parseMessageData(msg);
+                parsed.bot = botEntities[senderId].username;
+                io.emit('tg_message_update', parsed);
+            }
+        }, new NewMessage({ incoming: true, outgoing: true }));
 
-        // 2. Menangkap pesan DIEDIT menggunakan metode Raw API (Anti-Crash)
+        // Event: Pesan Di-Edit (Update Tombol/Teks)
         client.addEventHandler(async (update) => {
-            if (update.className === 'UpdateEditMessage' || update.className === 'UpdateEditChannelMessage') {
-                processBotMessage(update.message);
+            if (update.className === 'UpdateEditMessage') {
+                const msg = update.message;
+                if (!msg || !msg.peerId || !msg.peerId.userId) return;
+                
+                let senderId = msg.peerId.userId.toString();
+                if (botEntities[senderId]) {
+                    const parsed = parseMessageData(msg);
+                    parsed.bot = botEntities[senderId].username;
+                    io.emit('tg_message_update', parsed);
+                }
             }
         });
 
-
-        // --- SOCKET.IO WEB ---
+        // --- KOMUNIKASI DENGAN WEB ---
         io.on('connection', (socket) => {
-            console.log('[WEB] Perangkat baru mengakses web dashboard.');
-
-            socket.on('send_command', async (command) => {
+            
+            // 1. Mengambil riwayat agar chat tidak hilang saat refresh
+            socket.on('fetch_tg_history', async (botUsername) => {
                 try {
-                    console.log(`[WEB] Mengirim pesan ke bot: ${command}`);
-                    await client.sendMessage(botEntity || BOT_USERNAME, { message: command });
-                    console.log(`[TG] Pesan berhasil dikirim!`);
-                } catch (err) {
-                    console.error('[TG ERROR] Gagal mengirim pesan:', err);
-                }
+                    // Ambil 15 pesan terakhir dari bot yang dipilih
+                    const history = await client.getMessages(botUsername, { limit: 15 });
+                    let parsedHistory = history.reverse().map(msg => parseMessageData(msg));
+                    
+                    socket.emit('tg_history', { bot: botUsername, messages: parsedHistory });
+                } catch (e) { console.error('Gagal memuat history', e); }
             });
 
-            socket.on('click_inline_button', async (payload) => {
+            // 2. Mengirim perintah (seperti /start)
+            socket.on('send_tg_command', async (payload) => {
                 try {
-                    console.log(`[WEB] Mengirim klik tombol (Pesan ID: ${payload.messageId})`);
+                    await client.sendMessage(payload.target, { message: payload.command });
+                } catch (err) {}
+            });
+
+            // 3. Menekan tombol inline
+            socket.on('click_tg_inline', async (payload) => {
+                try {
                     const callbackData = Buffer.from(payload.data, 'base64');
                     await client.invoke(new Api.messages.GetBotCallbackAnswer({
-                        peer: botEntity || BOT_USERNAME,
+                        peer: payload.target,
                         msgId: payload.messageId,
                         data: callbackData
                     }));
-                    console.log(`[TG] Tombol berhasil ditekan!`);
-                } catch (err) {
-                    console.error('[TG ERROR] Gagal menekan tombol:', err);
-                }
+                } catch (err) {}
             });
         });
 
-    } catch (error) {
-        console.error('[SYSTEM ERROR]', error);
-    }
+    } catch (error) { console.error('[SYSTEM ERROR]', error); }
 }
 
 startSystem();
