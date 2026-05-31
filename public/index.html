@@ -28,30 +28,8 @@
             .form-row { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
             .form-group { width: 100% !important; }
             table.tbl { display: block !important; overflow-x: auto !important; white-space: nowrap !important; }
-            .login-box { padding: 25px 20px !important; width: 90% !important; margin: 0 auto; }
         }
 
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #111318 0%, #070809 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        #login-overlay::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0, 210, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 210, 255, 0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
-        .login-wrapper { position: relative; z-index: 10; width: 100%; max-width: 380px; animation: fadeUp 0.6s ease-out; }
-        .login-brand { text-align: center; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .login-brand h2 { font-family: 'Syne', sans-serif; font-size: 46px; font-weight: 800; color: var(--cyan); letter-spacing: 4px; margin: 0; text-shadow: 0 0 20px rgba(0, 210, 255, 0.5); }
-        .version-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); letter-spacing: 2px; padding: 4px 10px; background: rgba(0, 210, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 20px; }
-        .login-box { background: rgba(17, 19, 24, 0.7); backdrop-filter: blur(12px); border: 1px solid var(--border); border-top: 3px solid var(--cyan); border-radius: 12px; padding: 40px 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
-        .login-alert { color: #ff4466; font-size: 12px; margin-bottom: 15px; padding: 10px; background: rgba(255, 68, 102, 0.1); border: 1px solid rgba(255, 68, 102, 0.3); border-radius: 6px; display: none; font-family: 'JetBrains Mono', monospace; text-align: center; }
-        .login-alert.success { color: var(--cyan); background: rgba(0, 210, 255, 0.1); border-color: rgba(0, 210, 255, 0.3); }
-        .login-box .input-group { margin-bottom: 20px; }
-        .login-box input[type="text"], .login-box input[type="password"] { width: 100%; padding: 14px 16px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); color: var(--text); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 13px; transition: all 0.3s ease; }
-        .login-box input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 210, 255, 0.15); }
-        .btn-login { width: 100%; padding: 14px; background: var(--cyan); color: var(--bg); border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); margin-top: 5px; }
-        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(0, 210, 255, 0.6); }
-        .login-footer { margin-top: 25px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .login-footer span { font-size: 11px; color: var(--text2); }
-        .btn-register { background: transparent; border: 1px solid var(--border); color: var(--text2); padding: 8px 24px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; cursor: pointer; transition: 0.3s; }
-        .btn-register:hover { border-color: var(--cyan); color: var(--cyan); }
-        .expire-alert { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--red); font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 12px; }
-        .key-desc { font-size: 11px; color: var(--text2); text-align: center; margin-bottom: 25px; line-height: 1.6; }
-        
         .admin-only { display: none !important; }
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: var(--surface2); border: 1px solid var(--border); border-left: 4px solid var(--cyan); color: var(--text); padding: 15px 20px; border-radius: 6px; box-shadow: 0 5px 20px rgba(0,0,0,0.6); animation: slideInRight 0.3s forwards; font-family: 'JetBrains Mono', monospace; font-size: 12px; min-width: 250px; pointer-events: auto; }
@@ -96,36 +74,6 @@
 <div class="modal-overlay" id="custom-modal"><div class="modal-box"><p id="modal-msg">Apakah Anda yakin?</p><div class="modal-btn-row"><button class="btn btn-outline" onclick="closeModal(false)">Batal</button><button class="btn btn-cyan" onclick="closeModal(true)" id="modal-btn-yes">Ya, Lanjutkan</button></div></div></div>
 <div id="toast-container"></div>
 
-<div id="login-overlay">
-    <div class="login-wrapper">
-        <div class="login-brand"><h2>FOERTA</h2><span class="version-badge">v11.23</span></div>
-        <div class="login-box" id="box-login">
-            <div id="login-msg" class="login-alert"></div>
-            <div class="input-group"><input type="text" id="log-user" placeholder="Username" autocomplete="off" required></div>
-            <div class="input-group"><input type="password" id="log-pass" placeholder="Password" autocomplete="off" required></div>
-            <button class="btn-login" onclick="doLogin()">LOGIN</button>
-            <div class="login-footer"><span>Belum punya akses?</span><button class="btn-register" onclick="showRegister()">DAFTAR AKUN BARU</button></div>
-        </div>
-        <div class="login-box" id="box-register" style="display:none; border-top-color: var(--amber);">
-            <div id="reg-msg" class="login-alert"></div>
-            <p style="text-align:center; font-size:12px; color:var(--text2); margin-bottom:15px;">Buat Akun Baru FOERTA</p>
-            <div class="input-group"><input type="text" id="reg-user" placeholder="Username Pilihan" autocomplete="off" required></div>
-            <div class="input-group"><input type="password" id="reg-pass" placeholder="Password Pilihan" autocomplete="off" required></div>
-            <button class="btn-login" style="background:var(--amber); color:black;" onclick="doRegister()">REGISTER ACCOUNT</button>
-            <div class="login-footer"><span>Sudah punya akun?</span><button class="btn-register" onclick="showLogin()">KEMBALI KE LOGIN</button></div>
-        </div>
-        <div class="login-box" id="box-key" style="display:none; border-top-color: var(--red);">
-            <div class="expire-alert"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg><span>ACCESS DENIED</span></div>
-            <p class="key-desc">Masa aktif akun telah habis.<br>Masukkan License Key valid untuk memulihkan akses terminal.</p>
-            <div id="key-msg" class="login-alert"></div>
-            <div class="input-group"><input type="text" id="log-key-user" placeholder="Username Kamu" autocomplete="off" required></div>
-            <div class="input-group"><input type="text" id="log-key-code" placeholder="FOERTA-XXXXXX" autocomplete="off" required></div>
-            <button class="btn-login" style="background:var(--red); color:white;" onclick="submitKey()">ACTIVATE OVERRIDE</button>
-            <div class="login-footer"><a href="https://t.me/navvyyyyyy" target="_blank" class="btn-register" style="text-decoration:none; display:inline-block; border-color:var(--cyan); color:var(--cyan);">HUBUNGI ADMIN</a><button class="btn-register" onclick="doLogout()" style="margin-top:10px;">KEMBALI KE LOGIN</button></div>
-        </div>
-    </div>
-</div>
-
 <div class="hamburger-btn" onclick="toggleSidebar()">☰ MENU FOERTA</div>
 
 <nav class="sidebar" id="sidebar">
@@ -135,6 +83,7 @@
   <div class="nav-item" data-page="agents" onclick="showPage('agents')"><span class="nav-text">👥 Sesi Aktif</span></div>
   <div class="nav-sep"></div>
 
+  <!-- MENU BARU UNTUK PANEL OTP BOT -->
   <div class="nav-item" data-page="botpanel" onclick="showPage('botpanel')"><span class="nav-text">🤖 Panel Bot OTP</span></div>
   <div class="nav-sep"></div>
 
@@ -159,6 +108,7 @@
 
   <div class="content">
     
+    <!-- HALAMAN BARU: PANEL BOT OTP -->
     <div class="page" id="page-botpanel">
         <div class="card fade-in" style="display:flex; flex-direction:column; height: 80vh;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -166,17 +116,20 @@
                 <span style="font-size:11px; color:var(--text2);">Auto-Sync History & Auto-Copy Number</span>
             </div>
             
+            <!-- Tab Untuk Multi-Bot -->
             <div class="bot-tabs">
                 <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">PBD Panel</button>
                 <button class="bot-tab" onclick="switchBot('@BotOTP2', this)">Bot OTP 2</button>
                 <button class="bot-tab" onclick="switchBot('@BotOTP3', this)">Bot OTP 3</button>
             </div>
 
+            <!-- Area Chat UI -->
             <div class="chat-wrapper">
                 <div class="messages-area" id="tgMessagesArea">
                     <div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>
                 </div>
                 
+                <!-- Tombol Action Utama -->
                 <div class="chat-action-area">
                     <button class="btn btn-cyan" style="width:100%; padding:14px; font-size:14px; font-weight:bold;" onclick="sendTelegramCommand('/start')">▶ MULAI BOT (/start)</button>
                 </div>
@@ -573,6 +526,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="app.js?v=11.23"></script>
 
+<!-- SCRIPT KHUSUS UNTUK TELEGRAM BOT UI -->
 <script>
     let activeTelegramBot = '@PBDxbot';
 
