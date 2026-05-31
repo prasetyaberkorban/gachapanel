@@ -8,8 +8,8 @@ const input = require('input');
 
 // Konfigurasi Environment Variables (untuk Heroku)
 const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 1234567; 
-const API_HASH = process.env.TELEGRAM_API_HASH || 'YOUR_API_HASH';
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:2017/panel-otp';
+const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
 const PORT = process.env.PORT || 3000;
 
 const BOT_USERNAME = 'PBDxPanel';
