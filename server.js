@@ -6,14 +6,12 @@ const { StringSession } = require('telegram/sessions');
 const { NewMessage } = require('telegram/events');
 const mongoose = require('mongoose');
 
-// Konfigurasi Environment Variables
 const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 31303511; 
 const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550'; 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
 const PORT = process.env.PORT || 3000;
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
-// DAFTAR BOT YANG DIDUKUNG (Tab Multi-Bot)
 const TARGET_BOTS = ['@PBDxbot', '@BotOTP2', '@BotOTP3']; 
 
 const app = express();
@@ -42,13 +40,12 @@ async function startSystem() {
         const client = new TelegramClient(new StringSession(sessionString), API_ID, API_HASH, { connectionRetries: 5 });
 
         await client.connect(); 
-        console.log('[TG] Connected to Telegram (Background Mode)!');
+        console.log('[TG] Connected to Telegram!');
 
         if (!savedSession && ENV_SESSION) {
             await SessionModel.create({ sessionKey: 'telegram_userbot', sessionString: ENV_SESSION });
         }
 
-        // Cache ID dari multi-bots untuk filter cepat
         let botEntities = {};
         for (let b of TARGET_BOTS) {
             try {
@@ -57,7 +54,7 @@ async function startSystem() {
             } catch (e) {}
         }
 
-        // Fungsi Parsing Pesan Telegram ke Format JSON Web
+        // FUNGSI PARSING AMAN
         const parseMessageData = (msg) => {
             let buttonsArr = [];
             if (msg.replyMarkup && msg.replyMarkup.rows) {
@@ -75,13 +72,14 @@ async function startSystem() {
             }
             return {
                 messageId: msg.id,
-                text: msg.message || "",
+                // Mengambil teks dengan fallback ganda
+                text: msg.text || msg.message || "", 
                 buttons: buttonsArr,
-                isMe: msg.out // true jika kita yg kirim, false jika bot
+                isMe: msg.out 
             };
         };
 
-        // Event: Pesan Baru
+        // PESAN BARU
         client.addEventHandler(async (event) => {
             const msg = event.message;
             if (!msg || !msg.peerId || !msg.peerId.userId) return;
@@ -94,14 +92,14 @@ async function startSystem() {
             }
         }, new NewMessage({ incoming: true, outgoing: true }));
 
-        // Event: Pesan Di-Edit (Update Tombol/Teks)
+        // PESAN DI-EDIT (Deteksi Super Kuat)
         client.addEventHandler(async (update) => {
-            if (update.className === 'UpdateEditMessage') {
+            if (update.className === 'UpdateEditMessage' || update.className === 'UpdateEditChannelMessage') {
                 const msg = update.message;
-                if (!msg || !msg.peerId || !msg.peerId.userId) return;
+                if (!msg || !msg.peerId) return;
                 
-                let senderId = msg.peerId.userId.toString();
-                if (botEntities[senderId]) {
+                let senderId = msg.peerId.userId ? msg.peerId.userId.toString() : "";
+                if (senderId && botEntities[senderId]) {
                     const parsed = parseMessageData(msg);
                     parsed.bot = botEntities[senderId].username;
                     io.emit('tg_message_update', parsed);
@@ -109,28 +107,20 @@ async function startSystem() {
             }
         });
 
-        // --- KOMUNIKASI DENGAN WEB ---
+        // SOCKET WEB
         io.on('connection', (socket) => {
-            
-            // 1. Mengambil riwayat agar chat tidak hilang saat refresh
             socket.on('fetch_tg_history', async (botUsername) => {
                 try {
-                    // Ambil 15 pesan terakhir dari bot yang dipilih
                     const history = await client.getMessages(botUsername, { limit: 15 });
                     let parsedHistory = history.reverse().map(msg => parseMessageData(msg));
-                    
                     socket.emit('tg_history', { bot: botUsername, messages: parsedHistory });
-                } catch (e) { console.error('Gagal memuat history', e); }
+                } catch (e) {}
             });
 
-            // 2. Mengirim perintah (seperti /start)
             socket.on('send_tg_command', async (payload) => {
-                try {
-                    await client.sendMessage(payload.target, { message: payload.command });
-                } catch (err) {}
+                try { await client.sendMessage(payload.target, { message: payload.command }); } catch (err) {}
             });
 
-            // 3. Menekan tombol inline
             socket.on('click_tg_inline', async (payload) => {
                 try {
                     const callbackData = Buffer.from(payload.data, 'base64');
