@@ -3,57 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel OTP Pribadi</title>
+    <title>Telegram Web UI Clone</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1e1e1e; color: white; padding: 20px; }
-        .box { background: #2d2d2d; padding: 20px; border-radius: 8px; max-width: 400px; margin: 0 auto; text-align: center; }
-        button { background: #8a2be2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; width: 100%;}
-        button:hover { background: #7a1fd1; }
-        .result { margin-top: 20px; font-size: 18px; }
-        .otp { font-size: 24px; font-weight: bold; color: #4caf50; margin-top: 10px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0f0f0f; color: #fff; margin: 0; display: flex; justify-content: center; height: 100vh; }
+        .chat-container { display: flex; flex-direction: column; width: 100%; max-width: 600px; background: #1a1a1a; height: 100%; border-left: 1px solid #333; border-right: 1px solid #333; }
+        
+        .header { background: #282e33; padding: 15px; text-align: center; font-weight: bold; border-bottom: 1px solid #333; }
+        
+        .messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* Bubble Chat Styling */
+        .message-bubble { background: #2b5278; padding: 12px; border-radius: 12px; max-width: 85%; align-self: flex-start; line-height: 1.5; white-space: pre-wrap; font-size: 15px;}
+        .user-bubble { background: #407b46; align-self: flex-end; }
+        
+        /* Inline Buttons Styling */
+        .keyboard-area { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .btn-row { display: flex; gap: 5px; justify-content: space-between; }
+        .btn-inline { background: rgba(0, 0, 0, 0.3); color: #5eb5f7; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px; cursor: pointer; flex: 1; text-align: center; font-size: 14px; font-weight: 500; transition: background 0.2s; }
+        .btn-inline:hover { background: rgba(0, 0, 0, 0.5); }
+        .btn-loading { opacity: 0.6; pointer-events: none; }
+
+        /* Input Area */
+        .input-area { display: flex; padding: 15px; background: #282e33; gap: 10px; border-top: 1px solid #333;}
+        .input-area input { flex: 1; padding: 12px; border-radius: 20px; border: none; background: #1a1a1a; color: white; outline: none; font-size: 15px;}
+        .input-area button { background: #5eb5f7; color: #fff; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h2>Panel Nomor Virtual</h2>
-        <button id="btnGetNumber">Get Number</button>
-        
-        <div class="result">
-            <p>Nomor: <span id="displayNumber">-</span></p>
-            <p>Status: <span id="displayStatus">Menunggu perintah...</span></p>
-            <div class="otp" id="displayOtp">-</div>
+    <div class="chat-container">
+        <div class="header">
+            🤖 PBD x Panel (Full Web UI)
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+            <div class="message-bubble">Koneksi berhasil! Ketik pesan (misal: Get Number atau /start) untuk memulai interaksi dengan bot.</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="cmdInput" placeholder="Ketik pesan..." onkeypress="handleEnter(event)">
+            <button onclick="sendCommand()">Kirim</button>
         </div>
     </div>
 
     <script>
         const socket = io();
-        
-        const btnGetNumber = document.getElementById('btnGetNumber');
-        const displayNumber = document.getElementById('displayNumber');
-        const displayStatus = document.getElementById('displayStatus');
-        const displayOtp = document.getElementById('displayOtp');
+        const messagesArea = document.getElementById('messagesArea');
+        const cmdInput = document.getElementById('cmdInput');
 
-        // Memicu request dari web ke backend
-        btnGetNumber.addEventListener('click', () => {
-            displayNumber.innerText = "Memproses...";
-            displayStatus.innerText = "Mengeksekusi bot...";
-            displayOtp.innerText = "-";
-            socket.emit('request_number');
+        function scrollToBottom() {
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendCommand();
+        }
+
+        function sendCommand() {
+            const cmd = cmdInput.value;
+            if(cmd.trim() !== "") {
+                // Tampilkan pesan pengguna di kanan
+                const userBubble = document.createElement('div');
+                userBubble.className = 'message-bubble user-bubble';
+                userBubble.innerText = cmd;
+                messagesArea.appendChild(userBubble);
+                scrollToBottom();
+
+                socket.emit('send_command', cmd);
+                cmdInput.value = "";
+            }
+        }
+
+        // Menerima pesan (dan editan pesan) dari bot
+        socket.on('bot_message', (payload) => {
+            
+            // Cek apakah div pesan dengan ID ini sudah ada (artinya pesan ini hasil editan)
+            let botBubble = document.getElementById(`msg-${payload.messageId}`);
+            let isNewMessage = false;
+
+            if (!botBubble) {
+                // Jika belum ada, buat gelembung baru
+                botBubble = document.createElement('div');
+                botBubble.className = 'message-bubble';
+                botBubble.id = `msg-${payload.messageId}`;
+                isNewMessage = true;
+            }
+
+            // Atur isi konten pesan (Teks + Tombol)
+            let bubbleContent = `<div>${payload.text}</div>`;
+            
+            // Render Tombol Inline
+            if (payload.buttons && payload.buttons.length > 0) {
+                bubbleContent += `<div class="keyboard-area">`;
+                payload.buttons.forEach((row, rowIndex) => {
+                    bubbleContent += `<div class="btn-row">`;
+                    row.forEach((btn, btnIndex) => {
+                        // Gunakan stringifikasi data untuk onclick function
+                        const safeData = btn.data ? `'${btn.data}'` : 'null';
+                        const safeUrl = btn.url ? `'${btn.url}'` : 'null';
+                        
+                        bubbleContent += `<button class="btn-inline" onclick="clickBtn(${payload.messageId}, ${safeData}, ${safeUrl}, this)">${btn.text}</button>`;
+                    });
+                    bubbleContent += `</div>`;
+                });
+                bubbleContent += `</div>`;
+            }
+
+            // Update atau Masukkan ke layar
+            botBubble.innerHTML = bubbleContent;
+
+            if (isNewMessage) {
+                messagesArea.appendChild(botBubble);
+            }
+            scrollToBottom();
         });
 
-        // Menerima nomor dari backend
-        socket.on('number_received', (number) => {
-            displayNumber.innerText = number;
-            displayStatus.innerText = "Menunggu OTP dari grup...";
-        });
-
-        // Menerima OTP dari backend
-        socket.on('otp_received', (otp) => {
-            displayStatus.innerText = "OTP Berhasil didapat!";
-            displayOtp.innerText = otp;
-        });
+        // Fungsi klik tombol
+        function clickBtn(msgId, data, url, btnElement) {
+            if (url) {
+                window.open(url, '_blank');
+            } else if (data) {
+                // Efek loading saat ditekan
+                btnElement.classList.add('btn-loading');
+                btnElement.innerText = "⏳ Memproses...";
+                
+                socket.emit('click_inline_button', {
+                    messageId: msgId,
+                    data: data
+                });
+            }
+        }
     </script>
 </body>
 </html>
