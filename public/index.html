@@ -46,7 +46,7 @@
         .tg-btn-inline { background: rgba(0, 0, 0, 0.3); color: #5eb5f7; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; cursor: pointer; flex: 1; min-width: 30%; text-align: center; font-size: 11px; font-weight: bold; transition: 0.2s; font-family: 'JetBrains Mono', monospace; }
         .tg-btn-inline:hover { background: rgba(0, 210, 255, 0.2); border-color: var(--cyan); }
 
-        /* Auto-Copy Number Highlight */
+        /* Highlight Text */
         .copyable-num { background: rgba(0, 210, 255, 0.15); color: var(--cyan); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; text-decoration: underline dashed; }
         .copyable-num:hover { background: var(--cyan); color: #000; }
         
@@ -72,7 +72,6 @@
   </div>
 
   <div class="content">
-    
     <div class="page active" id="page-botpanel">
         <div class="card fade-in" style="display:flex; flex-direction:column; height: 82vh;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -97,7 +96,6 @@
             </div>
         </div>
     </div>
-    
   </div>
 </div>
 
@@ -108,24 +106,15 @@
     const socket = io();
     let activeTelegramBot = '@PBDxbot';
 
-    // --- LOGIKA MULTI-BOT & UI ---
     function switchBot(botUsername, btnElement) {
         activeTelegramBot = botUsername;
-        
-        // Ganti Style Tab Aktif
         document.querySelectorAll('.bot-tab').forEach(b => b.classList.remove('active'));
         btnElement.classList.add('active');
         
-        // Reset Layar
         document.getElementById('tgMessagesArea').innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>';
-        
-        // Panggil Riwayat Baru
         socket.emit('fetch_tg_history', botUsername);
         
-        // Jika di HP, tutup sidebar otomatis setelah milih tab
-        if(window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.remove('show');
-        }
+        if(window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('show'); }
     }
 
     function scrollTgBottom() {
@@ -133,10 +122,8 @@
         area.scrollTop = area.scrollHeight;
     }
 
-    // --- AKSI TELEGRAM ---
     function sendTelegramCommand(cmd) {
         const area = document.getElementById('tgMessagesArea');
-        // Tampilkan bubble palsu untuk efek instan
         area.innerHTML += `<div class="msg-bubble msg-out">${cmd}</div>`;
         scrollTgBottom();
         socket.emit('send_tg_command', { target: activeTelegramBot, command: cmd });
@@ -148,38 +135,35 @@
         socket.emit('click_tg_inline', { target: activeTelegramBot, messageId: msgId, data: dataBase64 });
     }
 
-    // --- FITUR AUTO-COPY NOMOR ---
     function copyNumber(numStr) {
-        navigator.clipboard.writeText(numStr).then(() => {
+        // Membersihkan spasi / strip agar nomor bersih
+        const cleanNum = numStr.replace(/[\s\-\(\)]/g, '');
+        navigator.clipboard.writeText(cleanNum).then(() => {
             const toast = document.getElementById('toast');
-            toast.innerText = `Nomor ${numStr} disalin!`;
+            toast.innerText = `Nomor ${cleanNum} disalin!`;
             toast.style.opacity = '1';
             setTimeout(() => { toast.style.opacity = '0'; }, 2000);
         });
     }
 
-    // --- FUNGSI PARSER ---
     function formatTextWithCopy(text) {
         if (!text) return "";
-        
-        // 1. Amankan Tag HTML (Escape)
         let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                           
-        // 2. Parse Markdown Telegram
+        
+        // Render Markdown Bawaan Telegram
         safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
         safeText = safeText.replace(/__(.*?)__/g, '<em>$1</em>'); 
         safeText = safeText.replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.5);padding:2px 4px;border-radius:4px;color:var(--cyan);">$1</code>'); 
         
-        // 3. Tangkap Nomor HP & Jadikan Tombol Copy
+        // Render Angka biasa yang terselip di teks (Opsional)
         let regex = /(\+?[\d\s\-\(\)]{8,18}\d)/g;
         return safeText.replace(regex, (match) => {
             const cleanNum = match.replace(/[\s\-\(\)]/g, ''); 
-            if(cleanNum.length < 8) return match; // Abaikan jika bukan nomor HP
+            if(cleanNum.length < 8) return match; 
             return `<span class="copyable-num" onclick="copyNumber('${cleanNum}')">${match}</span>`;
         });
     }
 
-    // --- SOCKET LISTENERS ---
     socket.on('tg_history', (payload) => {
         if (payload.bot !== activeTelegramBot) return; 
         
@@ -201,7 +185,6 @@
         scrollTgBottom();
     });
 
-    // --- RENDER GELEMBUNG CHAT ---
     function renderTgMessage(msg, isUpdate = false) {
         const area = document.getElementById('tgMessagesArea');
         let bubbleId = `tg-msg-${msg.messageId}`;
@@ -214,11 +197,25 @@
             msg.buttons.forEach(row => {
                 htmlContent += `<div class="tg-btn-row">`;
                 row.forEach(btn => {
+                    
                     if (btn.url) {
+                        // Tombol Link
                         htmlContent += `<button class="tg-btn-inline" onclick="window.open('${btn.url}', '_blank')">${btn.text}</button>`;
+                    
                     } else if (btn.data) {
+                        // Tombol Inline (Callback / Menunggu Proses)
                         htmlContent += `<button class="tg-btn-inline" onclick="clickTgInline(${msg.messageId}, '${btn.data}', this)">${btn.text}</button>`;
+                    
+                    } else if (btn.copyText || btn.className === 'KeyboardButtonCopy') {
+                        // TOMBOL NOMOR (COPY)
+                        let txtCopy = btn.copyText || btn.text;
+                        htmlContent += `<button class="tg-btn-inline" style="border-color:var(--green); color:var(--green);" onclick="copyNumber('${txtCopy}')">📋 ${btn.text}</button>`;
+                    
+                    } else {
+                        // TOMBOL KEYBOARD BAWAAN (seperti "Get Number", dikirim sebagai Teks)
+                        htmlContent += `<button class="tg-btn-inline" style="border-color:var(--amber); color:var(--amber);" onclick="sendTelegramCommand('${btn.text}')">${btn.text}</button>`;
                     }
+                    
                 });
                 htmlContent += `</div>`;
             });
@@ -236,7 +233,6 @@
         }
     }
 
-    // Eksekusi Pancingan Pertama Saat Web Dibuka
     setTimeout(() => { socket.emit('fetch_tg_history', activeTelegramBot); }, 1000);
 </script>
 </body>
