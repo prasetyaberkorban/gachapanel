@@ -13,8 +13,16 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@f
 const PORT = process.env.PORT || 3000;
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
-// DAFTAR BOT YANG DIDUKUNG
-const TARGET_BOTS = ['@PBDxbot', '@BotOTP2', '@BotOTP3']; 
+// DAFTAR BOT YANG DIDUKUNG (DIPERBARUI)
+const TARGET_BOTS = [
+    '@PBDxbot', 
+    '@ROCKETOTP_BOT', 
+    '@mrotpgen3_bot', 
+    '@IMS_OTP_Number_BOT', 
+    '@KING_SMS_PANEL_BOT', 
+    '@OneSmsXbot', 
+    '@NokosxBot'
+]; 
 
 const app = express();
 const server = http.createServer(app);
@@ -67,8 +75,8 @@ async function startSystem() {
                             text: btn.text,
                             data: btn.data ? btn.data.toString('base64') : null, 
                             url: btn.url || null,
-                            copyText: btn.copyText || null, // Menangkap data tombol Copy
-                            className: btn.className // Menangkap tipe tombol (Keyboard Biasa vs Inline)
+                            copyText: btn.copyText || null, 
+                            className: btn.className 
                         });
                     });
                     buttonsArr.push(rowButtons);
