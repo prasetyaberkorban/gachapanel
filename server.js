@@ -12,8 +12,8 @@ const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
 const PORT = process.env.PORT || 3000;
 
-const BOT_USERNAME = 'PBDxPanel';
-const OTP_GROUP_ID = -100123456789; // Ganti dengan ID grup PBD OTP
+const BOT_USERNAME = '@PBDxbot';
+const OTP_GROUP_ID = -2638899812; // Ganti dengan ID grup PBD OTP
 
 const app = express();
 const server = http.createServer(app);
