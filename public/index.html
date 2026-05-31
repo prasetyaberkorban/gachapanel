@@ -83,7 +83,6 @@
   <div class="nav-item" data-page="agents" onclick="showPage('agents')"><span class="nav-text">👥 Sesi Aktif</span></div>
   <div class="nav-sep"></div>
 
-  <!-- MENU BARU UNTUK PANEL OTP BOT -->
   <div class="nav-item" data-page="botpanel" onclick="showPage('botpanel')"><span class="nav-text">🤖 Panel Bot OTP</span></div>
   <div class="nav-sep"></div>
 
@@ -96,7 +95,6 @@
   <div class="nav-item admin-only" data-page="admin" onclick="showPage('admin')"><span class="nav-text">👑 Panel Admin</span></div>
   <div class="nav-item admin-only" data-page="monitor" onclick="showPage('monitor')"><span class="nav-text">📊 System Monitor</span></div>
   <div class="nav-item admin-only" data-page="settings" onclick="showPage('settings')"><span class="nav-text">⚙️ Settings</span></div>
-  <div class="nav-item" onclick="doLogout()"><span class="nav-text" style="color:var(--red)">🚪 Logout</span></div>
 </nav>
 
 <div class="main">
@@ -108,7 +106,6 @@
 
   <div class="content">
     
-    <!-- HALAMAN BARU: PANEL BOT OTP -->
     <div class="page" id="page-botpanel">
         <div class="card fade-in" style="display:flex; flex-direction:column; height: 80vh;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -116,20 +113,17 @@
                 <span style="font-size:11px; color:var(--text2);">Auto-Sync History & Auto-Copy Number</span>
             </div>
             
-            <!-- Tab Untuk Multi-Bot -->
             <div class="bot-tabs">
                 <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">PBD Panel</button>
                 <button class="bot-tab" onclick="switchBot('@BotOTP2', this)">Bot OTP 2</button>
                 <button class="bot-tab" onclick="switchBot('@BotOTP3', this)">Bot OTP 3</button>
             </div>
 
-            <!-- Area Chat UI -->
             <div class="chat-wrapper">
                 <div class="messages-area" id="tgMessagesArea">
                     <div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>
                 </div>
                 
-                <!-- Tombol Action Utama -->
                 <div class="chat-action-area">
                     <button class="btn btn-cyan" style="width:100%; padding:14px; font-size:14px; font-weight:bold;" onclick="sendTelegramCommand('/start')">▶ MULAI BOT (/start)</button>
                 </div>
@@ -526,7 +520,6 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="app.js?v=11.23"></script>
 
-<!-- SCRIPT KHUSUS UNTUK TELEGRAM BOT UI -->
 <script>
     let activeTelegramBot = '@PBDxbot';
 
