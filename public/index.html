@@ -158,23 +158,23 @@
         });
     }
 
-    // --- FUNGSI FORMAT TEXT ---
+    // --- FUNGSI PARSER ---
     function formatTextWithCopy(text) {
         if (!text) return "";
         
-        // 1. ESCAPE HTML: Mengubah < dan > menjadi karakter aman agar tidak disembunyikan browser.
-        let safeText = text.replace(/&/g, "&amp;")
-                           .replace(/</g, "&lt;")
-                           .replace(/>/g, "&gt;");
+        // 1. Amankan Tag HTML (Escape)
+        let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                           
+        // 2. Parse Markdown Telegram
+        safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); 
+        safeText = safeText.replace(/__(.*?)__/g, '<em>$1</em>'); 
+        safeText = safeText.replace(/`(.*?)`/g, '<code style="background:rgba(0,0,0,0.5);padding:2px 4px;border-radius:4px;color:var(--cyan);">$1</code>'); 
         
-        // 2. REGEX FLEKSIBEL: Menangkap angka panjang (spasi/strip/kurung)
+        // 3. Tangkap Nomor HP & Jadikan Tombol Copy
         let regex = /(\+?[\d\s\-\(\)]{8,18}\d)/g;
-        
         return safeText.replace(regex, (match) => {
             const cleanNum = match.replace(/[\s\-\(\)]/g, ''); 
-            // Validasi: pastikan angka asli minimal 8 digit agar tidak salah deteksi
-            if(cleanNum.length < 8) return match; 
-            
+            if(cleanNum.length < 8) return match; // Abaikan jika bukan nomor HP
             return `<span class="copyable-num" onclick="copyNumber('${cleanNum}')">${match}</span>`;
         });
     }
@@ -226,10 +226,8 @@
         }
 
         if (existingBubble) {
-            // Update pesan jika di-edit oleh bot
             existingBubble.innerHTML = htmlContent;
         } else {
-            // Render pesan baru
             const div = document.createElement('div');
             div.id = bubbleId;
             div.className = `msg-bubble ${msg.isMe ? 'msg-out' : 'msg-in'}`;
