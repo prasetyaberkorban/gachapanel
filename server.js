@@ -13,7 +13,7 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@f
 const PORT = process.env.PORT || 3000;
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
-// DAFTAR BOT YANG DIDUKUNG (DIPERBARUI)
+// DAFTAR BOT YANG DIDUKUNG
 const TARGET_BOTS = [
     '@PBDxbot', 
     '@ROCKETOTP_BOT', 
@@ -153,6 +153,13 @@ async function startSystem() {
                         data: callbackData
                     }));
                 } catch (err) {}
+            });
+
+            // [FITUR BARU]: Hapus Pesan Spesifik
+            socket.on('delete_tg_message', async (payload) => {
+                try {
+                    await client.deleteMessages(payload.target, [payload.messageId], { revoke: true });
+                } catch (err) { console.error('[TG ERROR] Gagal menghapus pesan:', err); }
             });
         });
 
