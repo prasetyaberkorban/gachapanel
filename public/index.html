@@ -21,10 +21,10 @@
             .nav-item.active .nav-text { color: #000000 !important; }
             .logo, .nav-sep { display: none !important; } 
             .main { width: 100% !important; margin-left: 0 !important; padding: 15px !important; }
-            .header { flex-direction: column !important; gap: 10px !important; margin-top: 5px !important; }
+            .header { flex-direction: row !important; gap: 10px !important; margin-top: 5px !important; display: flex; justify-content: space-between; }
         }
 
-        .bot-tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; flex-wrap: wrap; }
+        .bot-tabs { display: none; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; flex-wrap: wrap; animation: fadeUp 0.3s ease; }
         .bot-tab { background: transparent; color: var(--text2); border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: bold; font-size: 12px; transition: 0.3s; }
         .bot-tab:hover { background: rgba(0, 210, 255, 0.05); color: var(--text); }
         .bot-tab.active { background: rgba(0, 210, 255, 0.15); color: var(--cyan); border: 1px solid var(--cyan); }
@@ -33,9 +33,14 @@
         .messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .chat-action-area { padding: 15px; background: var(--surface); border-top: 1px solid var(--border); }
 
-        .msg-bubble { padding: 12px 16px; border-radius: 12px; max-width: 85%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; }
+        /* Penyesuaian Chat Bubbles agar icon hapus (delete) pas */
+        .msg-bubble { position: relative; padding: 12px 16px; padding-right: 35px; border-radius: 12px; max-width: 85%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; }
         .msg-in { background: #2b5278; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-out { background: #407b46; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+        /* Icon Delete di dalam gelembung pesan */
+        .delete-msg-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 12px; opacity: 0.4; transition: 0.2s; user-select: none; }
+        .delete-msg-btn:hover { opacity: 1; transform: scale(1.2); }
 
         .tg-keyboard { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
         .tg-btn-row { display: flex; gap: 6px; justify-content: space-between; flex-wrap: wrap; }
@@ -46,6 +51,30 @@
         .copyable-num:hover { background: var(--cyan); color: #000; }
         
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 10000; }
+
+        /* Floating Timer CSS */
+        .floating-timer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--surface2);
+            border: 2px solid var(--cyan);
+            color: var(--cyan);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.2);
+            z-index: 9999;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        .floating-timer:hover { background: var(--cyan); color: #000; }
+        .floating-timer.active { border-color: var(--amber); color: var(--amber); box-shadow: 0 4px 15px rgba(255, 184, 0, 0.2); }
+        .floating-timer.active:hover { background: var(--amber); color: #000; }
+        .floating-timer.danger { border-color: var(--red); color: var(--red); animation: blink 1s infinite; }
     </style>
 </head>
 <body>
@@ -58,22 +87,32 @@
 </nav>
 
 <div class="main">
+  <!-- Header dengan Status dan Jam Real-Time -->
   <div class="header">
     <div class="stat-pill cyan" style="border-color: var(--cyan);">
         <span class="status-dot active"></span>
         <span style="font-weight: bold; letter-spacing: 1px;" id="conn-status">Sistem Terhubung</span>
+    </div>
+    <div class="stat-pill" style="border-color: var(--border); margin-left: auto; background: var(--surface2);">
+        <span id="realtime-clock" style="font-family: 'JetBrains Mono', monospace; font-weight: bold; color: var(--cyan);">00:00:00 WIB</span>
     </div>
   </div>
 
   <div class="content">
     <div class="page active" id="page-botpanel">
         <div class="card fade-in" style="display:flex; flex-direction:column; height: 82vh;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3>Telegram Bot Controller</h3>
-                <span style="font-size:11px; color:var(--text2);">Auto-Sync History & Klik Nomor Untuk Copy</span>
+            
+            <!-- Kontrol Menu Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h3 style="margin: 0;">Telegram Bot Controller</h3>
+                    <button class="btn btn-outline" id="btnToggleMenu" style="padding: 6px 12px; font-size: 11px;" onclick="toggleBotMenu()">🤖 Daftar Bot ▼</button>
+                </div>
+                <!-- Tombol Hapus Layar sudah dihilangkan -->
             </div>
             
-            <div class="bot-tabs">
+            <!-- Tabs Bot (Bisa di-toggle) -->
+            <div class="bot-tabs" id="botTabsContainer">
                 <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">@PBDxbot</button>
                 <button class="bot-tab" onclick="switchBot('@ROCKETOTP_BOT', this)">@ROCKETOTP_BOT</button>
                 <button class="bot-tab" onclick="switchBot('@mrotpgen3_bot', this)">@mrotpgen3_bot</button>
@@ -83,6 +122,7 @@
                 <button class="bot-tab" onclick="switchBot('@NokosxBot', this)">@NokosxBot</button>
             </div>
 
+            <!-- Area Chat UI -->
             <div class="chat-wrapper">
                 <div class="messages-area" id="tgMessagesArea">
                     <div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>
@@ -99,14 +139,77 @@
 
 <div id="toast">Nomor berhasil disalin!</div>
 
+<!-- Floating Timer 1 Menit -->
+<div id="floating-timer" class="floating-timer" onclick="startTimer()">
+    <span id="timer-text">⏱️ 01:00</span>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    // [PERBAIKAN REAL-TIME]: Memaksa koneksi via WebSocket murni untuk menghilangkan jeda "Long Polling"
+    // --- JAM REAL-TIME JAKARTA ---
+    function updateClock() {
+        const now = new Date();
+        const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        document.getElementById('realtime-clock').innerText = now.toLocaleTimeString('id-ID', options) + ' WIB';
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // --- FITUR FLOATING TIMER 1 MENIT ---
+    let timerInterval;
+    let timeLeft = 60;
+    function startTimer() {
+        clearInterval(timerInterval);
+        timeLeft = 60;
+        
+        const timerBtn = document.getElementById('floating-timer');
+        const timerText = document.getElementById('timer-text');
+        
+        timerBtn.classList.add('active');
+        timerBtn.classList.remove('danger');
+        timerText.innerText = `⏱️ 01:00`;
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            let s = (timeLeft % 60).toString().padStart(2, '0');
+            timerText.innerText = `⏱️ ${m}:${s}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timerBtn.classList.remove('active');
+                timerBtn.classList.add('danger');
+                timerText.innerText = '🔔 Waktu Habis!';
+                
+                // Auto Reset ke kondisi awal setelah 4 detik
+                setTimeout(() => {
+                    timerBtn.classList.remove('danger');
+                    timerText.innerText = '⏱️ Mulai Timer';
+                }, 4000);
+            }
+        }, 1000);
+    }
+
+    // --- TOGGLE MENU BOT ---
+    function toggleBotMenu() {
+        const container = document.getElementById('botTabsContainer');
+        const btn = document.getElementById('btnToggleMenu');
+        
+        if (container.style.display === 'none' || container.style.display === '') {
+            container.style.display = 'flex';
+            btn.innerText = '🤖 Daftar Bot ▲';
+            btn.style.background = 'rgba(0, 210, 255, 0.1)';
+        } else {
+            container.style.display = 'none';
+            btn.innerText = '🤖 Daftar Bot ▼';
+            btn.style.background = 'transparent';
+        }
+    }
+
+    // --- KONEKSI SOCKET & TELEGRAM (REAL-TIME) ---
     const socket = io({ transports: ['websocket'], upgrade: false });
-    
     let activeTelegramBot = '@PBDxbot';
 
-    // Memancing riwayat langsung ketika koneksi Socket Web -> Server terbuka (Tanpa setTimeout)
     socket.on('connect', () => {
         document.getElementById('conn-status').innerText = 'Sistem Terhubung (Real-Time)';
         socket.emit('fetch_tg_history', activeTelegramBot);
@@ -123,7 +226,6 @@
         
         document.getElementById('tgMessagesArea').innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>';
         
-        // Panggil history langsung (tanpa jeda)
         socket.emit('fetch_tg_history', botUsername);
         
         if(window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('show'); }
@@ -136,7 +238,8 @@
 
     function sendTelegramCommand(cmd) {
         const area = document.getElementById('tgMessagesArea');
-        area.innerHTML += `<div class="msg-bubble msg-out">${cmd}</div>`;
+        // Gelembung dummy untuk history lokal
+        area.innerHTML += `<div class="msg-bubble msg-out"><span class="delete-msg-btn" onclick="this.parentElement.remove()">🗑️</span><div>${cmd}</div></div>`;
         scrollTgBottom();
         socket.emit('send_tg_command', { target: activeTelegramBot, command: cmd });
     }
@@ -145,6 +248,16 @@
         btnElement.style.opacity = '0.5';
         btnElement.innerText = '⏳';
         socket.emit('click_tg_inline', { target: activeTelegramBot, messageId: msgId, data: dataBase64 });
+    }
+
+    // --- FUNGSI HAPUS PESAN INDIVIDUAL ---
+    function deleteTgMessage(msgId) {
+        // Hapus dari UI langsung agar terasa instan
+        const bubble = document.getElementById(`tg-msg-${msgId}`);
+        if (bubble) bubble.remove();
+        
+        // Kirim event ke server untuk dihapus di Telegram
+        socket.emit('delete_tg_message', { target: activeTelegramBot, messageId: msgId });
     }
 
     function copyNumber(numStr) {
@@ -199,7 +312,9 @@
         let bubbleId = `tg-msg-${msg.messageId}`;
         let existingBubble = document.getElementById(bubbleId);
 
-        let htmlContent = `<div>${formatTextWithCopy(msg.text)}</div>`;
+        // Menambahkan ikon tong sampah 🗑️ di setiap pesan
+        let htmlContent = `<span class="delete-msg-btn" title="Hapus Pesan Ini" onclick="deleteTgMessage(${msg.messageId})">🗑️</span>`;
+        htmlContent += `<div>${formatTextWithCopy(msg.text)}</div>`;
         
         if (msg.buttons && msg.buttons.length > 0) {
             htmlContent += `<div class="tg-keyboard">`;
