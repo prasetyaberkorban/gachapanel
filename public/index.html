@@ -9,38 +9,83 @@
     <title>FOERTA — Telegram Center</title>
     <link rel="stylesheet" href="style.css?v=11.24">
     <style>
-        .hamburger-btn { display: none; }
+        /* --- TATA LETAK STICKY TOP BAR BARU UNTUK MOBILE --- */
+        .top-bar-mobile { display: none; }
+        
         @media (max-width: 768px) {
             body { display: block !important; overflow-x: hidden; }
-            .hamburger-btn { display: block !important; background: var(--surface2); color: var(--cyan); padding: 15px; text-align: center; font-weight: bold; font-family: 'Syne', sans-serif; border-bottom: 2px solid var(--cyan); position: sticky; top: 0; z-index: 1000; cursor: pointer; font-size: 16px; letter-spacing: 2px; }
+            
+            .top-bar-mobile { 
+                display: flex !important; 
+                justify-content: space-between; 
+                align-items: center; 
+                background: var(--surface2); 
+                padding: 0 15px; 
+                border-bottom: 2px solid var(--cyan); 
+                position: sticky; 
+                top: 0; 
+                z-index: 1000; 
+            }
+            
+            .hamburger-btn { 
+                display: block !important; 
+                border-bottom: none !important; 
+                padding: 15px 0 !important; 
+                background: transparent !important; 
+                font-size: 15px;
+                letter-spacing: 1px;
+                color: var(--cyan);
+                font-weight: bold;
+                font-family: 'Syne', sans-serif;
+            }
+            
+            .mobile-clock-container {
+                font-family: 'JetBrains Mono', monospace;
+                font-weight: bold;
+                color: var(--cyan);
+                background: rgba(0, 0, 0, 0.3);
+                padding: 6px 12px;
+                border-radius: 6px;
+                border: 1px solid var(--border);
+                font-size: 12px;
+            }
+
             .sidebar { display: none !important; width: 100% !important; height: auto !important; position: static !important; border-right: none !important; padding: 15px !important; background: var(--bg) !important; }
             .sidebar.show { display: flex !important; flex-direction: column !important; gap: 8px !important; }
-            .nav-item { display: block !important; text-align: center !important; padding: 14px 15px !important; margin: 0 !important; background: #1A1D24 !important; border-radius: 8px !important; border: 1px solid #2D323E !important; border-left: none !important; }
-            .nav-item .nav-text { display: block !important; font-size: 13px !important; font-weight: bold !important; color: #FFFFFF !important; }
-            .nav-item.active { background: var(--cyan) !important; border-color: var(--cyan) !important; }
-            .nav-item.active .nav-text { color: #000000 !important; }
-            .logo, .nav-sep { display: none !important; } 
+            .nav-item { display: block !important; text-align: center !important; padding: 14px 15px !important; margin: 0 !important; background: #1A1D24 !important; border-radius: 8px !important; border: 1px solid #2D323E !important; }
+            .nav-item .nav-text { display: block !important; font-size: 13px !important; font-weight: bold; color: #FFFFFF !important; }
+            .logo, .nav-sep, .main .header { display: none !important; } /* Sembunyikan header desktop asli di mobile */
             .main { width: 100% !important; margin-left: 0 !important; padding: 15px !important; }
-            .header { flex-direction: row !important; gap: 10px !important; margin-top: 5px !important; display: flex; justify-content: space-between; }
         }
 
-        .bot-tabs { display: none; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; flex-wrap: wrap; animation: fadeUp 0.3s ease; }
-        .bot-tab { background: transparent; color: var(--text2); border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: bold; font-size: 12px; transition: 0.3s; }
-        .bot-tab:hover { background: rgba(0, 210, 255, 0.05); color: var(--text); }
-        .bot-tab.active { background: rgba(0, 210, 255, 0.15); color: var(--cyan); border: 1px solid var(--cyan); }
+        /* --- STYLING TOGGLE CONTAINER BOT --- */
+        .bot-tabs-group { display: none; flex-direction: column; gap: 8px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 15px; animation: fadeUp 0.3s ease; }
+        .tabs-title-sub { font-size: 10px; color: var(--cyan); font-weight: bold; letter-spacing: 1px; margin-top: 5px; text-transform: uppercase;}
+        .bot-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+        .bot-tab { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: bold; font-size: 11px; transition: 0.3s; }
+        .bot-tab:hover { border-color: var(--cyan); color: var(--text); }
+        .bot-tab.active { background: rgba(0, 210, 255, 0.15); color: var(--cyan); border-color: var(--cyan); }
 
-        .chat-wrapper { flex: 1; display: flex; flex-direction: column; background: #0b0c0f; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; min-height: 500px;}
+        .chat-wrapper { flex: 1; display: flex; flex-direction: column; background: #0b0c0f; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; min-height: 550px;}
         .messages-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .chat-action-area { padding: 15px; background: var(--surface); border-top: 1px solid var(--border); }
 
-        /* Penyesuaian Chat Bubbles agar icon hapus (delete) pas */
-        .msg-bubble { position: relative; padding: 12px 16px; padding-right: 35px; border-radius: 12px; max-width: 85%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; }
+        /* Bubble Chat Core */
+        .msg-bubble { position: relative; padding: 12px 16px; padding-right: 35px; border-radius: 12px; max-width: 85%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; display: flex; flex-direction: column; }
         .msg-in { background: #2b5278; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-out { background: #407b46; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
 
-        /* Icon Delete di dalam gelembung pesan */
+        /* Meta Waktu Di Dalam Bubble Chat */
+        .msg-meta-time { align-self: flex-end; font-size: 10px; color: rgba(255,255,255,0.5); margin-top: 6px; user-select: none; pointer-events: none; }
+
         .delete-msg-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 12px; opacity: 0.4; transition: 0.2s; user-select: none; }
         .delete-msg-btn:hover { opacity: 1; transform: scale(1.2); }
+
+        /* Inline Input untuk Bot Sell */
+        .sell-reply-container { display: flex; gap: 6px; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); }
+        .sell-reply-input { flex: 1; background: #111; border: 1px solid var(--border); padding: 6px 10px; color: #fff; font-family: inherit; font-size: 12px; border-radius: 4px; outline: none; }
+        .sell-reply-input:focus { border-color: var(--cyan); }
+        .sell-reply-btn { background: var(--cyan); color: #000; border: none; padding: 6px 12px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 11px; }
 
         .tg-keyboard { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
         .tg-btn-row { display: flex; gap: 6px; justify-content: space-between; flex-wrap: wrap; }
@@ -52,34 +97,57 @@
         
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 10000; }
 
-        /* Floating Timer CSS */
-        .floating-timer {
+        /* Floating Layout Split Timer Baru */
+        .timer-floating-pod {
             position: fixed;
             bottom: 20px;
             right: 20px;
             background: var(--surface2);
             border: 2px solid var(--cyan);
-            color: var(--cyan);
-            padding: 10px 20px;
             border-radius: 30px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
+            display: flex;
+            align-items: center;
             box-shadow: 0 4px 15px rgba(0, 210, 255, 0.2);
             z-index: 9999;
+            overflow: hidden;
             transition: all 0.3s ease;
+        }
+        .timer-click-zone {
+            color: var(--cyan);
+            padding: 10px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
             user-select: none;
         }
-        .floating-timer:hover { background: var(--cyan); color: #000; }
-        .floating-timer.active { border-color: var(--amber); color: var(--amber); box-shadow: 0 4px 15px rgba(255, 184, 0, 0.2); }
-        .floating-timer.active:hover { background: var(--amber); color: #000; }
-        .floating-timer.danger { border-color: var(--red); color: var(--red); animation: blink 1s infinite; }
+        .timer-click-zone:hover { background: rgba(0, 210, 255, 0.08); }
+        .timer-stop-trigger {
+            background: rgba(255, 68, 102, 0.1);
+            color: var(--red);
+            border-left: 1px solid var(--border);
+            padding: 10px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            display: none;
+            user-select: none;
+        }
+        .timer-stop-trigger:hover { background: var(--red); color: #fff; }
+        
+        /* Status Timer Theme */
+        .timer-floating-pod.running { border-color: var(--amber); }
+        .timer-floating-pod.running .timer-click-zone { color: var(--amber); }
+        .timer-floating-pod.timeout { border-color: var(--red); animation: blink 1s infinite; }
+        .timer-floating-pod.timeout .timer-click-zone { color: var(--red); }
     </style>
 </head>
 <body>
 
-<div class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ MENU FOERTA</div>
+<div class="top-bar-mobile">
+    <div class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ MENU FOERTA</div>
+    <div class="mobile-clock-container" id="mobileClock">00:00:00 WIB</div>
+</div>
 
 <nav class="sidebar" id="sidebar">
   <div class="logo"><h2>FOERTA</h2><span style="color:var(--text2)">Telegram Center</span></div>
@@ -87,14 +155,13 @@
 </nav>
 
 <div class="main">
-  <!-- Header dengan Status dan Jam Real-Time -->
   <div class="header">
     <div class="stat-pill cyan" style="border-color: var(--cyan);">
         <span class="status-dot active"></span>
         <span style="font-weight: bold; letter-spacing: 1px;" id="conn-status">Sistem Terhubung</span>
     </div>
     <div class="stat-pill" style="border-color: var(--border); margin-left: auto; background: var(--surface2);">
-        <span id="realtime-clock" style="font-family: 'JetBrains Mono', monospace; font-weight: bold; color: var(--cyan);">00:00:00 WIB</span>
+        <span id="desktopClock" style="font-family: 'JetBrains Mono', monospace; font-weight: bold; color: var(--cyan);">00:00:00 WIB</span>
     </div>
   </div>
 
@@ -102,27 +169,34 @@
     <div class="page active" id="page-botpanel">
         <div class="card fade-in" style="display:flex; flex-direction:column; height: 82vh;">
             
-            <!-- Kontrol Menu Header -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <h3 style="margin: 0;">Telegram Bot Controller</h3>
-                    <button class="btn btn-outline" id="btnToggleMenu" style="padding: 6px 12px; font-size: 11px;" onclick="toggleBotMenu()">🤖 Daftar Bot ▼</button>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <h3 style="margin: 0; font-size: 13px;">Telegram Bot Controller</h3>
+                    <button class="btn btn-outline" id="btnToggleMenu" style="padding: 6px 12px; font-size: 11px;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
                 </div>
-                <!-- Tombol Hapus Layar sudah dihilangkan -->
             </div>
             
-            <!-- Tabs Bot (Bisa di-toggle) -->
-            <div class="bot-tabs" id="botTabsContainer">
-                <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">@PBDxbot</button>
-                <button class="bot-tab" onclick="switchBot('@ROCKETOTP_BOT', this)">@ROCKETOTP_BOT</button>
-                <button class="bot-tab" onclick="switchBot('@mrotpgen3_bot', this)">@mrotpgen3_bot</button>
-                <button class="bot-tab" onclick="switchBot('@IMS_OTP_Number_BOT', this)">@IMS_OTP_Number_BOT</button>
-                <button class="bot-tab" onclick="switchBot('@KING_SMS_PANEL_BOT', this)">@KING_SMS_PANEL_BOT</button>
-                <button class="bot-tab" onclick="switchBot('@OneSmsXbot', this)">@OneSmsXbot</button>
-                <button class="bot-tab" onclick="switchBot('@NokosxBot', this)">@NokosxBot</button>
+            <div class="bot-tabs-group" id="botTabsGroupContainer">
+                <div class="tabs-title-sub">❖ Daftar Sesi Bot OTP Utama</div>
+                <div class="bot-tabs">
+                    <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">@PBDxbot</button>
+                    <button class="bot-tab" onclick="switchBot('@ROCKETOTP_BOT', this)">@ROCKETOTP_BOT</button>
+                    <button class="bot-tab" onclick="switchBot('@mrotpgen3_bot', this)">@mrotpgen3_bot</button>
+                    <button class="bot-tab" onclick="switchBot('@IMS_OTP_Number_BOT', this)">@IMS_OTP_Number_BOT</button>
+                    <button class="bot-tab" onclick="switchBot('@KING_SMS_PANEL_BOT', this)">@KING_SMS_PANEL_BOT</button>
+                    <button class="bot-tab" onclick="switchBot('@OneSmsXbot', this)">@OneSmsXbot</button>
+                    <button class="bot-tab" onclick="switchBot('@NokosxBot', this)">@NokosxBot</button>
+                </div>
+                
+                <div class="tabs-title-sub">❖ Sektor Penjualan (Bot Sell)</div>
+                <div class="bot-tabs">
+                    <button class="bot-tab" onclick="switchBot('@ALL_WS_Sell_BOT', this)">@ALL_WS_Sell_BOT</button>
+                    <button class="bot-tab" onclick="switchBot('@Ws_Sell_World_bot', this)">@Ws_Sell_World_bot</button>
+                    <button class="bot-tab" onclick="switchBot('@Sellws_bot', this)">@Sellws_bot</button>
+                    <button class="bot-tab" onclick="switchBot('@wsotp200bot', this)">@wsotp200bot</button>
+                </div>
             </div>
 
-            <!-- Area Chat UI -->
             <div class="chat-wrapper">
                 <div class="messages-area" id="tgMessagesArea">
                     <div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>
@@ -139,84 +213,65 @@
 
 <div id="toast">Nomor berhasil disalin!</div>
 
-<!-- Floating Timer 1 Menit -->
-<div id="floating-timer" class="floating-timer" onclick="startTimer()">
-    <span id="timer-text">⏱️ 01:00</span>
+<div id="timer-pod" class="timer-floating-pod">
+    <div class="timer-click-zone" id="timer-display" onclick="triggerTimerStart()">⏱️ Start 01:30</div>
+    <div class="timer-stop-trigger" id="timer-stop-control" onclick="triggerTimerStop()">❌ STOP</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    // --- JAM REAL-TIME JAKARTA ---
-    function updateClock() {
+    // --- SINKRONISASI DUAL JAM REALTIME JAKARTA ---
+    function synchronizeClocks() {
         const now = new Date();
-        const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-        document.getElementById('realtime-clock').innerText = now.toLocaleTimeString('id-ID', options) + ' WIB';
+        const config = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+        const timeString = now.toLocaleTimeString('id-ID', config) + ' WIB';
+        
+        document.getElementById('desktopClock').innerText = timeString;
+        document.getElementById('mobileClock').innerText = timeString;
     }
-    setInterval(updateClock, 1000);
-    updateClock();
+    setInterval(synchronizeClocks, 1000);
+    synchronizeClocks();
 
-    // --- FITUR FLOATING TIMER 1 MENIT ---
-    let timerInterval;
-    let timeLeft = 60;
-    function startTimer() {
-        clearInterval(timerInterval);
-        timeLeft = 60;
-        
-        const timerBtn = document.getElementById('floating-timer');
-        const timerText = document.getElementById('timer-text');
-        
-        timerBtn.classList.add('active');
-        timerBtn.classList.remove('danger');
-        timerText.innerText = `⏱️ 01:00`;
-
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            let m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-            let s = (timeLeft % 60).toString().padStart(2, '0');
-            timerText.innerText = `⏱️ ${m}:${s}`;
-
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                timerBtn.classList.remove('active');
-                timerBtn.classList.add('danger');
-                timerText.innerText = '🔔 Waktu Habis!';
-                
-                // Auto Reset ke kondisi awal setelah 4 detik
-                setTimeout(() => {
-                    timerBtn.classList.remove('danger');
-                    timerText.innerText = '⏱️ Mulai Timer';
-                }, 4000);
-            }
-        }, 1000);
+    // --- STRUKTUR WAKTU RELATIF (RELATIVE TIMESTAMP) ---
+    function renderDynamicRelativeTime(epochMs) {
+        const diffMins = Math.floor((Date.now() - epochMs) / 60000);
+        if (diffMins < 1) return "baru saja";
+        return `${diffMins} menit yang lalu`;
     }
 
-    // --- TOGGLE MENU BOT ---
+    function updateAllRelativeTimestamps() {
+        document.querySelectorAll('.msg-meta-time').forEach(el => {
+            const originTs = parseInt(el.getAttribute('data-timestamp'));
+            const dateObj = new Date(originTs);
+            const HH = dateObj.getHours().toString().padStart(2, '0');
+            const mm = dateObj.getMinutes().toString().padStart(2, '0');
+            
+            el.innerText = `${HH}:${mm} • ${renderDynamicRelativeTime(originTs)}`;
+        });
+    }
+    setInterval(updateAllRelativeTimestamps, 30000); // Perbarui counter setiap 30 detik
+
+    // --- TOGGLE CONTAINER MENU LIPAT ---
     function toggleBotMenu() {
-        const container = document.getElementById('botTabsContainer');
+        const box = document.getElementById('botTabsGroupContainer');
         const btn = document.getElementById('btnToggleMenu');
-        
-        if (container.style.display === 'none' || container.style.display === '') {
-            container.style.display = 'flex';
-            btn.innerText = '🤖 Daftar Bot ▲';
-            btn.style.background = 'rgba(0, 210, 255, 0.1)';
+        if (box.style.display === 'flex') {
+            box.style.display = 'none';
+            btn.innerText = '🤖 Kelola Bot ▼';
         } else {
-            container.style.display = 'none';
-            btn.innerText = '🤖 Daftar Bot ▼';
-            btn.style.background = 'transparent';
+            box.style.display = 'flex';
+            btn.innerText = '🤖 Kelola Bot ▲';
         }
     }
 
-    // --- KONEKSI SOCKET & TELEGRAM (REAL-TIME) ---
+    // --- LAYANAN MURNI WEBSOCKET REALTIME ---
     const socket = io({ transports: ['websocket'], upgrade: false });
     let activeTelegramBot = '@PBDxbot';
 
     socket.on('connect', () => {
-        document.getElementById('conn-status').innerText = 'Sistem Terhubung (Real-Time)';
+        const statusText = document.getElementById('conn-status');
+        if(statusText) statusText.innerText = 'Sistem Terhubung (Real-Time)';
         socket.emit('fetch_tg_history', activeTelegramBot);
-    });
-
-    socket.on('disconnect', () => {
-        document.getElementById('conn-status').innerText = 'Koneksi Terputus...';
     });
 
     function switchBot(botUsername, btnElement) {
@@ -225,7 +280,6 @@
         btnElement.classList.add('active');
         
         document.getElementById('tgMessagesArea').innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>';
-        
         socket.emit('fetch_tg_history', botUsername);
         
         if(window.innerWidth <= 768) { document.getElementById('sidebar').classList.remove('show'); }
@@ -238,9 +292,15 @@
 
     function sendTelegramCommand(cmd) {
         const area = document.getElementById('tgMessagesArea');
-        // Gelembung dummy untuk history lokal
-        area.innerHTML += `<div class="msg-bubble msg-out"><span class="delete-msg-btn" onclick="this.parentElement.remove()">🗑️</span><div>${cmd}</div></div>`;
+        const now = Date.now();
+        area.innerHTML += `
+            <div class="msg-bubble msg-out">
+                <span class="delete-msg-btn" onclick="this.parentElement.remove()">🗑️</span>
+                <div>${cmd}</div>
+                <div class="msg-meta-time" data-timestamp="${now}">--:-- • baru saja</div>
+            </div>`;
         scrollTgBottom();
+        updateAllRelativeTimestamps();
         socket.emit('send_tg_command', { target: activeTelegramBot, command: cmd });
     }
 
@@ -250,13 +310,26 @@
         socket.emit('click_tg_inline', { target: activeTelegramBot, messageId: msgId, data: dataBase64 });
     }
 
-    // --- FUNGSI HAPUS PESAN INDIVIDUAL ---
+    // INTERAKSI REPLY KODE OTP KHUSUS BOT SEKTOR SELL
+    function executeInlineReply(msgId, btnTrigger) {
+        const container = btnTrigger.parentElement;
+        const inputField = container.querySelector('.sell-reply-input');
+        const codeText = inputField.value;
+
+        if (codeText.trim() !== "") {
+            socket.emit('send_tg_reply', { target: activeTelegramBot, replyToMsgId: msgId, text: codeText });
+            inputField.value = "";
+            
+            const toast = document.getElementById('toast');
+            toast.innerText = `Kode OTP terbalas ke bot!`;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+        }
+    }
+
     function deleteTgMessage(msgId) {
-        // Hapus dari UI langsung agar terasa instan
         const bubble = document.getElementById(`tg-msg-${msgId}`);
         if (bubble) bubble.remove();
-        
-        // Kirim event ke server untuk dihapus di Telegram
         socket.emit('delete_tg_message', { target: activeTelegramBot, messageId: msgId });
     }
 
@@ -286,17 +359,49 @@
         });
     }
 
+    // --- SISTEM KONTROL TIMER PERSISTEN SERVER VIA SOCKET.IO ---
+    function triggerTimerStart() {
+        const pod = document.getElementById('timer-pod');
+        if (!pod.classList.contains('running')) {
+            socket.emit('start_server_timer');
+        }
+    }
+
+    function triggerTimerStop() {
+        socket.emit('stop_server_timer');
+    }
+
+    socket.on('timer_update', (state) => {
+        const pod = document.getElementById('timer-pod');
+        const display = document.getElementById('timer-display');
+        const stopControl = document.getElementById('timer-stop-control');
+
+        pod.className = 'timer-floating-pod ' + state.status;
+
+        if (state.active) {
+            let m = Math.floor(state.timeLeft / 60).toString().padStart(2, '0');
+            let s = (state.timeLeft % 60).toString().padStart(2, '0');
+            display.innerText = `⏱️ Jeda: ${m}:${s}`;
+            stopControl.style.display = 'block';
+        } else {
+            stopControl.style.display = 'none';
+            if (state.status === 'timeout') {
+                display.innerText = '🔔 Waktu Habis!';
+            } else {
+                display.innerText = '⏱️ Start 01:30';
+            }
+        }
+    });
+
+    // --- CORE RENDERING ENGINE ---
     socket.on('tg_history', (payload) => {
         if (payload.bot !== activeTelegramBot) return; 
-        
         const area = document.getElementById('tgMessagesArea');
         area.innerHTML = '';
-        
         if (payload.messages.length === 0) {
             area.innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Belum ada riwayat chat. Tekan tombol Mulai di bawah.</div>';
             return;
         }
-
         payload.messages.forEach(msg => { renderTgMessage(msg); });
         scrollTgBottom();
     });
@@ -312,10 +417,18 @@
         let bubbleId = `tg-msg-${msg.messageId}`;
         let existingBubble = document.getElementById(bubbleId);
 
-        // Menambahkan ikon tong sampah 🗑️ di setiap pesan
-        let htmlContent = `<span class="delete-msg-btn" title="Hapus Pesan Ini" onclick="deleteTgMessage(${msg.messageId})">🗑️</span>`;
+        let htmlContent = `<span class="delete-msg-btn" title="Hapus" onclick="deleteTgMessage(${msg.messageId})">🗑️</span>`;
         htmlContent += `<div>${formatTextWithCopy(msg.text)}</div>`;
         
+        // Kondisional Khusus: Tambahkan kolom input balasan manual jika target adalah Bot Sell
+        if (msg.isSellBot && !msg.isMe) {
+            htmlContent += `
+                <div class="sell-reply-container">
+                    <input type="text" class="sell-reply-input" placeholder="Ketik kode/teks OTP..." onkeypress="if(event.key==='Enter') executeInlineReply(${msg.messageId}, this.nextElementSibling)">
+                    <button class="sell-reply-btn" onclick="executeInlineReply(${msg.messageId}, this)">Kirim</button>
+                </div>`;
+        }
+
         if (msg.buttons && msg.buttons.length > 0) {
             htmlContent += `<div class="tg-keyboard">`;
             msg.buttons.forEach(row => {
@@ -337,6 +450,8 @@
             htmlContent += `</div>`;
         }
 
+        htmlContent += `<div class="msg-meta-time" data-timestamp="${msg.timestamp}">--:-- • baru saja</div>`;
+
         if (existingBubble) {
             existingBubble.innerHTML = htmlContent;
         } else {
@@ -346,6 +461,7 @@
             div.innerHTML = htmlContent;
             area.appendChild(div);
         }
+        updateAllRelativeTimestamps();
     }
 </script>
 </body>
