@@ -90,7 +90,7 @@
             .content { padding: 10px; }
         }
 
-        /* --- DESAIN CHAT DAN MENU COMPONENT --- */
+        /* --- STYLING TOGGLE CONTAINER BOT --- */
         .bot-tabs-group { display: none; flex-direction: column; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; flex-shrink: 0; }
         .tabs-title-sub { font-size: 10px; color: var(--cyan); font-weight: bold; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase;}
         .bot-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -127,12 +127,48 @@
         #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 10000; pointer-events: none;}
 
         /* Timer Floating Pod Layout */
-        .timer-floating-pod { position: fixed; bottom: 20px; right: 20px; background: var(--surface2); border: 2px solid var(--cyan); border-radius: 30px; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0, 210, 255, 0.2); z-index: 9999; overflow: hidden; }
-        .timer-click-zone { color: var(--cyan); padding: 10px 16px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: bold; cursor: pointer; user-select: none; }
-        .timer-stop-trigger { background: rgba(255, 68, 102, 0.1); color: var(--red); border-left: 1px solid var(--border); padding: 10px 12px; font-size: 11px; cursor: pointer; font-weight: bold; display: none; }
+        .timer-floating-pod {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--surface2);
+            border: 2px solid var(--cyan);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.2);
+            z-index: 9999;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .timer-click-zone {
+            color: var(--cyan);
+            padding: 10px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }
+        .timer-click-zone:hover { background: rgba(0, 210, 255, 0.08); }
+        .timer-stop-trigger {
+            background: rgba(255, 68, 102, 0.1);
+            color: var(--red);
+            border-left: 1px solid var(--border);
+            padding: 10px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            display: none;
+            user-select: none;
+        }
+        .timer-stop-trigger:hover { background: var(--red); color: #fff; }
+        
+        /* Status Timer Theme */
         .timer-floating-pod.running { border-color: var(--amber); }
         .timer-floating-pod.running .timer-click-zone { color: var(--amber); }
         .timer-floating-pod.timeout { border-color: var(--red); animation: blink 1s infinite; }
+        .timer-floating-pod.timeout .timer-click-zone { color: var(--red); }
     </style>
 </head>
 <body>
@@ -224,6 +260,7 @@
     <div class="timer-stop-trigger" id="timer-stop-control" onclick="triggerTimerStop()">❌ STOP</div>
 </div>
 
+<script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io({ transports: ['websocket'], upgrade: false });
     let activeTelegramBot = '@PBDxbot';
@@ -276,7 +313,18 @@
     // --- TOGGLE LIST MENU BOT ---
     function toggleBotMenu() {
         const box = document.getElementById('botTabsGroupContainer');
-        box.style.display = (box.style.display === 'flex') ? 'none' : 'flex';
+        const btnM = document.getElementById('btnToggleMenuMobile');
+        const btnD = document.getElementById('btnToggleMenuDesktop');
+        
+        if (box.style.display === 'flex') {
+            box.style.display = 'none';
+            if(btnM) btnM.innerText = '🤖 Kelola Bot ▼';
+            if(btnD) btnD.innerText = '🤖 Kelola Bot ▼';
+        } else {
+            box.style.display = 'flex';
+            if(btnM) btnM.innerText = '🤖 Kelola Bot ▲';
+            if(btnD) btnD.innerText = '🤖 Kelola Bot ▲';
+        }
     }
 
     // --- SYSTEM CONTROLS FOR BOT & MESSAGES ---
