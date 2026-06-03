@@ -13,14 +13,12 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@f
 const PORT = process.env.PORT || 3000;
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
-// SEMUA TARGET BOT (Bot Utama & Bot Sell)
+// ALL SUPPORTED BOTS
 const TARGET_BOTS = [
     '@PBDxbot', '@ROCKETOTP_BOT', '@mrotpgen3_bot', '@IMS_OTP_Number_BOT', 
     '@KING_SMS_PANEL_BOT', '@OneSmsXbot', '@NokosxBot',
     '@ALL_WS_Sell_BOT', '@Ws_Sell_World_bot', '@Sellws_bot', '@wsotp200bot'
 ]; 
-
-// Grouping Khusus Bot Sell untuk Fitur Reply OTP Input
 const SELL_BOTS = ['@ALL_WS_Sell_BOT', '@Ws_Sell_World_bot', '@Sellws_bot', '@wsotp200bot'];
 
 const app = express();
@@ -29,29 +27,52 @@ const io = new Server(server);
 
 app.use(express.static('public'));
 
-// State Timer Persisten di Server (1 Menit 30 Detik = 90 Detik)
+// Server State Timer
 let timerState = { active: false, endTime: null, timeLeft: 90 };
 let timerIntervalId = null;
 
+// --- DATABASE SCHEMAS ---
 const SessionSchema = new mongoose.Schema({
     sessionKey: { type: String, default: 'telegram_userbot' },
     sessionString: String
 });
 const SessionModel = mongoose.model('TelegramSession', SessionSchema);
 
+// Histori Log OTP Masuk
+const OtpLogSchema = new mongoose.Schema({
+    bot: String,
+    text: String,
+    dateStr: String, // YYYY-MM-DD
+    timestamp: { type: Date, default: Date.now }
+});
+const OtpLogModel = mongoose.model('OtpLog', OtpLogSchema);
+
+// Counter Harian Per Tanggal
+const OtpCounterSchema = new mongoose.Schema({
+    dateStr: { type: String, unique: true },
+    count: { type: Number, default: 0 }
+});
+const OtpCounterModel = mongoose.model('OtpCounter', OtpCounterSchema);
+
+// Helper dapatkan string tanggal Jakarta (WIB)
+function getJakartaDateStr() {
+    const jktDate = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
+    return `${jktDate.getFullYear()}-${String(jktDate.getMonth() + 1).padStart(2, '0')}-${String(jktDate.getDate()).padStart(2, '0')}`;
+}
+
 async function startSystem() {
-    server.listen(PORT, () => console.log(`[SERVER] Berjalan di port ${PORT}`));
+    server.listen(PORT, () => console.log(`[SERVER] Running on port ${PORT}`));
 
     try {
         await mongoose.connect(MONGODB_URI);
         let savedSession = await SessionModel.findOne({ sessionKey: 'telegram_userbot' });
         let sessionString = savedSession ? savedSession.sessionString : ENV_SESSION;
 
-        if (!sessionString) return console.error('[TG ERROR] String Session kosong!');
+        if (!sessionString) return console.error('[TG ERROR] String Session Kosong!');
 
         const client = new TelegramClient(new StringSession(sessionString), API_ID, API_HASH, { connectionRetries: 5 });
         await client.connect(); 
-        console.log('[TG] Userbot Connected!');
+        console.log('[TG] Connected successfully!');
 
         if (!savedSession && ENV_SESSION) {
             await SessionModel.create({ sessionKey: 'telegram_userbot', sessionString: ENV_SESSION });
@@ -64,6 +85,29 @@ async function startSystem() {
                 botEntities[entity.id.toString()] = { username: b, entity: entity };
             } catch (e) {}
         }
+
+        // Ambil Data & Cek Deteksi Pola OTP
+        const checkAndSaveOtp = async (botName, text) => {
+            const hasOtpWord = /otp|code|kode|received|assigned/i.test(text);
+            const hasNumbers = /\d{3,6}/.test(text);
+            
+            if (hasOtpWord && hasNumbers) {
+                const today = getJakartaDateStr();
+                
+                // Simpan Riwayat Log ke DB
+                await OtpLogModel.create({ bot: botName, text: text, dateStr: today });
+                
+                // Naikkan Hitungan Counter di DB
+                const counter = await OtpCounterModel.findOneAndUpdate(
+                    { dateStr: today },
+                    { $inc: { count: 1 } },
+                    { upsert: true, new: true }
+                );
+                
+                // Kirim live update analytics ke Web Frontend
+                io.emit('analytics_update', { dateStr: today, count: counter.count });
+            }
+        };
 
         const parseMessageData = (msg) => {
             let buttonsArr = [];
@@ -82,8 +126,6 @@ async function startSystem() {
                     buttonsArr.push(rowButtons);
                 });
             }
-
-            // Dapatkan username bot pengirim asal untuk mencocokkan tipe bot sell
             let peerIdStr = msg.peerId && msg.peerId.userId ? msg.peerId.userId.toString() : "";
             let botUsername = botEntities[peerIdStr] ? botEntities[peerIdStr].username : "";
 
@@ -92,12 +134,12 @@ async function startSystem() {
                 text: msg.message || msg.text || "",
                 buttons: buttonsArr,
                 isMe: msg.out,
-                timestamp: msg.date ? msg.date * 1000 : Date.now(), // Ambil data epoch konversi ke ms
+                timestamp: msg.date ? msg.date * 1000 : Date.now(),
                 isSellBot: SELL_BOTS.includes(botUsername)
             };
         };
 
-        // EVENT: Pesan Baru
+        // LISTENER: Pesan Baru
         client.addEventHandler(async (event) => {
             const msg = event.message;
             if (!msg || !msg.peerId || !msg.peerId.userId) return;
@@ -106,10 +148,12 @@ async function startSystem() {
                 const parsed = parseMessageData(msg);
                 parsed.bot = botEntities[senderId].username;
                 io.emit('tg_message_update', parsed);
+                
+                if(!msg.out) await checkAndSaveOtp(parsed.bot, parsed.text);
             }
         }, new NewMessage({ incoming: true, outgoing: true }));
 
-        // EVENT: Pesan Di-Edit
+        // LISTENER: Pesan Edit
         client.addEventHandler(async (update) => {
             let updatesToProcess = update.updates ? update.updates : [update];
             for (const u of updatesToProcess) {
@@ -123,19 +167,18 @@ async function startSystem() {
                         const parsed = parseMessageData(msg);
                         parsed.bot = botEntities[senderId].username;
                         io.emit('tg_message_update', parsed);
+                        
+                        if(!msg.out) await checkAndSaveOtp(parsed.bot, parsed.text);
                     }
                 }
             }
         });
 
-        // --- MANAJEMEN SERVER-SIDE TIMER ---
+        // Timer Interval Thread
         function runServerTimer() {
             if (timerIntervalId) clearInterval(timerIntervalId);
             timerIntervalId = setInterval(() => {
-                if (!timerState.active) {
-                    clearInterval(timerIntervalId);
-                    return;
-                }
+                if (!timerState.active) return clearInterval(timerIntervalId);
                 const msLeft = timerState.endTime - Date.now();
                 if (msLeft <= 0) {
                     timerState.active = false;
@@ -149,10 +192,14 @@ async function startSystem() {
             }, 1000);
         }
 
-        // SOCKET COMMUNICATION
-        io.on('connection', (socket) => {
-            // Sinkronisasi status timer saat user baru membuka web
+        // IO CHANNELS COMMUNICATIONS
+        io.on('connection', async (socket) => {
             socket.emit('timer_update', timerState.active ? { active: true, timeLeft: timerState.timeLeft, status: 'running' } : { active: false, timeLeft: 90, status: 'idle' });
+
+            // Ambil data counter aktif hari ini saat web dibuka
+            const todayStr = getJakartaDateStr();
+            const currentCounter = await OtpCounterModel.findOne({ dateStr: todayStr });
+            socket.emit('analytics_init', { dateStr: todayStr, count: currentCounter ? currentCounter.count : 0 });
 
             socket.on('fetch_tg_history', async (botUsername) => {
                 try {
@@ -166,27 +213,34 @@ async function startSystem() {
                 } catch (e) {}
             });
 
+            // Ambil Seluruh Log OTP dari DB Mongodb
+            socket.on('fetch_otp_logs', async () => {
+                try {
+                    const logs = await OtpLogModel.find().sort({ timestamp: -1 }).limit(50);
+                    socket.emit('otp_logs_response', logs);
+                } catch (e) {}
+            });
+
+            // Fitur Reset Counter Harian
+            socket.on('reset_today_counter', async () => {
+                const today = getJakartaDateStr();
+                await OtpCounterModel.findOneAndUpdate({ dateStr: today }, { $set: { count: 0 } }, { upsert: true });
+                io.emit('analytics_update', { dateStr: today, count: 0 });
+            });
+
             socket.on('send_tg_command', async (payload) => {
                 try { await client.sendMessage(payload.target, { message: payload.command }); } catch (err) {}
             });
 
-            // FITUR REPLAY KODE OTP SPESIFIK
             socket.on('send_tg_reply', async (payload) => {
-                try {
-                    await client.sendMessage(payload.target, { 
-                        message: payload.text, 
-                        replyTo: payload.replyToMsgId 
-                    });
-                } catch (err) {}
+                try { await client.sendMessage(payload.target, { message: payload.text, replyTo: payload.replyToMsgId }); } catch (err) {}
             });
 
             socket.on('click_tg_inline', async (payload) => {
                 try {
                     const callbackData = Buffer.from(payload.data, 'base64');
                     await client.invoke(new Api.messages.GetBotCallbackAnswer({
-                        peer: payload.target,
-                        msgId: payload.messageId,
-                        data: callbackData
+                        peer: payload.target, msgId: payload.messageId, data: callbackData
                     }));
                 } catch (err) {}
             });
@@ -195,10 +249,9 @@ async function startSystem() {
                 try { await client.deleteMessages(payload.target, [payload.messageId], { revoke: true }); } catch (err) {}
             });
 
-            // KONTROL TIMER DARI FRONTEND
             socket.on('start_server_timer', () => {
                 timerState.active = true;
-                timerState.endTime = Date.now() + 90000; // 1 Menit 30 Detik
+                timerState.endTime = Date.now() + 90000;
                 timerState.timeLeft = 90;
                 io.emit('timer_update', { active: true, timeLeft: 90, status: 'running' });
                 runServerTimer();
