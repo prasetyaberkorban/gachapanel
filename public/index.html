@@ -7,17 +7,17 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>FOERTA — Telegram Center</title>
-    <link rel="stylesheet" href="style.css?v=11.26">
+    <link rel="stylesheet" href="style.css?v=11.27">
     <style>
         /* --- KENDALI FIX LAYOUT ANTI SCROLL INDUK --- */
         * { box-sizing: border-box; }
         
         html, body {
             margin: 0; padding: 0; width: 100vw; height: 100vh; 
-            overflow: hidden; /* Lock scroll layar luar */
+            overflow: hidden; 
             font-family: 'JetBrains Mono', monospace;
             background: var(--bg); color: var(--text);
-            display: flex; flex-direction: row; /* Desktop Default */
+            display: flex; flex-direction: row; 
         }
 
         .sidebar {
@@ -92,8 +92,7 @@
         .bot-tab.active { background: rgba(0, 210, 255, 0.15); color: var(--cyan); border-color: var(--cyan); }
 
         .chat-wrapper { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #0b0c0f; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
-        .messages-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; width: 100%; } /* SCROLL HANYA DI SINI */
-        .chat-action-area { padding: 12px; background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
+        .messages-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; width: 100%; } 
 
         .msg-bubble { position: relative; padding: 12px 16px; padding-right: 35px; border-radius: 12px; max-width: 90%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; display: flex; flex-direction: column; }
         .msg-in { background: #2b5278; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
@@ -137,6 +136,14 @@
 </head>
 <body>
 
+<div class="top-bar-mobile">
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ FOERTA</button>
+        <div class="mobile-clock-container" id="mobileClock">00:00:00 WIB</div>
+    </div>
+    <button class="btn-outline" id="btnToggleMenuMobile" style="padding: 6px 10px; font-size: 11px; border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); background: transparent; cursor: pointer; font-weight: bold;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
+</div>
+
 <nav class="sidebar" id="sidebar">
   <div style="padding: 20px; border-bottom: 1px solid var(--border); margin-bottom: 10px;">
       <h2 style="color:var(--cyan); margin:0; font-family:'Syne',sans-serif; letter-spacing:2px;">FOERTA</h2>
@@ -148,15 +155,6 @@
 </nav>
 
 <div class="main">
-
-  <div class="top-bar-mobile">
-      <div style="display: flex; gap: 12px; align-items: center;">
-          <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ FOERTA</button>
-          <div class="mobile-clock-container" id="mobileClock">00:00:00 WIB</div>
-      </div>
-      <button class="btn-outline" id="btnToggleMenuMobile" style="padding: 6px 10px; font-size: 11px; border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); background: transparent; cursor: pointer; font-weight: bold;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
-  </div>
-
   <div class="header-desktop">
     <div style="display: flex; gap: 15px; align-items: center;">
         <div style="background: var(--surface2); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--cyan); font-size: 12px; color: var(--cyan); font-weight: bold;" id="conn-status">🟢 Sistem Terhubung</div>
@@ -173,7 +171,10 @@
         <div class="card">
             
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink: 0;">
-                <h3 style="margin: 0; font-size: 14px; color: var(--text2); font-family: 'Syne', sans-serif; text-transform: uppercase;">▶ INTERAKSI PANEL BOT</h3>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <h3 style="margin: 0; font-size: 13px; color: var(--text2); font-family: 'Syne', sans-serif; text-transform: uppercase;">▶ INTERAKSI PANEL BOT</h3>
+                    <button style="background: var(--cyan); color: #000; border: none; padding: 4px 10px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 10px; font-family: 'JetBrains Mono', monospace;" onclick="sendTelegramCommand('/start')">▶ /START</button>
+                </div>
             </div>
             
             <div class="bot-tabs-group" id="botTabsGroupContainer" style="display: none;">
@@ -200,9 +201,6 @@
             <div class="chat-wrapper">
                 <div class="messages-area" id="tgMessagesArea">
                     <div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>
-                </div>
-                <div class="chat-action-area">
-                    <button style="width:100%; padding:14px; font-size:14px; font-weight:bold; background: var(--cyan); color: #000; border: none; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif;" onclick="sendTelegramCommand('/start')">▶ MULAI BOT (/start)</button>
                 </div>
             </div>
         </div>
@@ -309,7 +307,6 @@
         const btnM = document.getElementById('btnToggleMenuMobile');
         const btnD = document.getElementById('btnToggleMenuDesktop');
         
-        // Pengecekan status display menggunakan computedStyle (Sangat Aman)
         const isHidden = window.getComputedStyle(box).display === 'none';
         
         if (isHidden) {
@@ -469,7 +466,7 @@
         const area = document.getElementById('tgMessagesArea');
         area.innerHTML = '';
         if (payload.messages.length === 0) {
-            area.innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Belum ada riwayat chat.<br><br>Kirim pesan /start di bawah untuk memulai.</div>';
+            area.innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Belum ada riwayat chat.<br><br>Gunakan tombol /start di atas untuk memulai.</div>';
             return;
         }
         payload.messages.forEach(msg => { renderTgMessage(msg); });
