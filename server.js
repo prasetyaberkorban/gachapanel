@@ -89,9 +89,16 @@ async function startSystem() {
 
         const checkAndSaveOtp = async (botName, text) => {
             const hasOtpWord = /otp|code|kode|received|assigned/i.test(text);
-            const hasNumbers = /\d{3,6}/.test(text);
             
-            if (hasOtpWord && hasNumbers) {
+            // --- PERBAIKAN REGEX OTP ---
+            // \b = batas kata (word boundary) agar tidak nyangkut di tengah nomor HP panjang
+            // \d{3} = 3 angka
+            // [-\s]? = opsional ada strip atau spasi
+            // \d{3} = 3 angka lagi
+            // Contoh yang lolos: "123456", "123-456", "123 456"
+            const hasExact6Digits = /\b\d{3}[-\s]?\d{3}\b/.test(text);
+            
+            if (hasOtpWord && hasExact6Digits) {
                 const today = getJakartaDateStr();
                 await OtpLogModel.create({ bot: botName, text: text, dateStr: today });
                 const counter = await OtpCounterModel.findOneAndUpdate(
