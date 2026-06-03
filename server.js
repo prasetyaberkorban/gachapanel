@@ -251,7 +251,7 @@ async function startSystem() {
 
             socket.on('start_server_timer', () => {
                 timerState.active = true;
-                timerState.endTime = Date.now() + 90000;
+                timerState.endTime = Date.now() + 90000; // 90 Detik = 1 Menit 30 Detik
                 timerState.timeLeft = 90;
                 io.emit('timer_update', { active: true, timeLeft: 90, status: 'running' });
                 runServerTimer();
