@@ -7,36 +7,37 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>FOERTA — Telegram Center</title>
-    <link rel="stylesheet" href="style.css?v=11.25">
+    <link rel="stylesheet" href="style.css?v=11.26">
     <style>
-        /* --- KENDALI FIX LAYOUT (ANTI BUGS SCROLL MOBILE) --- */
+        /* --- KENDALI FIX LAYOUT ANTI SCROLL INDUK --- */
         * { box-sizing: border-box; }
-        :root { --sidebar-width: 220px; }
         
         html, body {
             margin: 0; padding: 0; width: 100vw; height: 100vh; 
             overflow: hidden; /* Lock scroll layar luar */
             font-family: 'JetBrains Mono', monospace;
-            background: var(--bg); color: var(--text); display: flex;
+            background: var(--bg); color: var(--text);
+            display: flex; flex-direction: row; /* Desktop Default */
         }
 
         .sidebar {
-            width: var(--sidebar-width); height: 100vh; background: var(--surface); 
-            border-right: 1px solid var(--border); display: flex; flex-direction: column; 
-            transition: left 0.3s ease; z-index: 2000; flex-shrink: 0;
+            width: 220px; height: 100vh; background: var(--surface); 
+            border-right: 1px solid var(--border); display: flex; 
+            flex-direction: column; transition: left 0.3s ease; 
+            z-index: 2000; flex-shrink: 0;
         }
 
         .main {
-            flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh;
+            flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100vh; position: relative;
         }
 
         .header-desktop {
             display: flex; justify-content: space-between; align-items: center;
-            background: var(--surface); padding: 15px 20px; border-bottom: 1px solid var(--border);
+            background: var(--surface); padding: 15px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
         }
 
         .content {
-            flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 20px; overflow: hidden;
+            flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 20px; overflow: hidden; position: relative;
         }
 
         .page {
@@ -46,17 +47,14 @@
 
         .top-bar-mobile { display: none; }
 
-        /* --- MODE MOBILE (HP) --- */
+        /* --- MOBILE LAYOUT OVERRIDES --- */
         @media (max-width: 768px) {
-            :root { --sidebar-width: 0px; }
-            
-            .sidebar { position: fixed; left: -100%; top: 60px; height: calc(100vh - 60px); width: 250px; }
+            .sidebar { position: fixed; left: -100%; top: 0; height: 100vh; width: 250px; }
             .sidebar.show { left: 0; }
             
             .header-desktop { display: none !important; }
             .content { padding: 10px; }
             
-            /* TOP BAR STICKY MOBILE */
             .top-bar-mobile { 
                 display: flex; width: 100%; height: 60px; background: var(--surface2); 
                 align-items: center; justify-content: space-between; padding: 0 12px; 
@@ -64,8 +62,8 @@
             }
             
             .hamburger-btn { 
-                background: transparent; border: none; color: var(--text); 
-                font-size: 13px; font-weight: bold; cursor: pointer; padding: 0;
+                background: transparent; border: none; color: var(--cyan); 
+                font-size: 14px; font-weight: bold; cursor: pointer; padding: 5px;
                 font-family: 'Syne', sans-serif; letter-spacing: 1px;
             }
             
@@ -83,24 +81,20 @@
             border-radius: 8px; padding: 15px; width: 100%; overflow: hidden;
         }
 
-        /* Container Dropdown Bot */
         .bot-tabs-group { 
-            display: none; flex-direction: column; gap: 8px; margin-bottom: 10px; 
+            display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; 
             background: var(--surface2); padding: 12px; border-radius: 8px; 
             border: 1px solid var(--border); flex-shrink: 0; max-height: 35vh; overflow-y: auto;
-            animation: fadeUp 0.2s ease;
         }
         .tabs-title-sub { font-size: 10px; color: var(--cyan); font-weight: bold; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase;}
         .bot-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
         .bot-tab { background: var(--surface); color: var(--text2); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: bold; font-size: 11px; }
         .bot-tab.active { background: rgba(0, 210, 255, 0.15); color: var(--cyan); border-color: var(--cyan); }
 
-        /* Room Chat Bounded */
         .chat-wrapper { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #0b0c0f; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
-        .messages-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .messages-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; width: 100%; } /* SCROLL HANYA DI SINI */
         .chat-action-area { padding: 12px; background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
 
-        /* Chat Bubbles Anti Squish */
         .msg-bubble { position: relative; padding: 12px 16px; padding-right: 35px; border-radius: 12px; max-width: 90%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; display: flex; flex-direction: column; }
         .msg-in { background: #2b5278; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; }
         .msg-out { background: #407b46; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
@@ -109,26 +103,22 @@
         .delete-msg-btn { position: absolute; top: 10px; right: 10px; cursor: pointer; font-size: 12px; opacity: 0.4; }
         .delete-msg-btn:hover { opacity: 1; }
 
-        /* Sell Reply Box */
         .sell-reply-container { display: flex; gap: 6px; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; width: 100%; }
         .sell-reply-input { flex: 1; min-width: 0; background: #111; border: 1px solid var(--border); padding: 8px 10px; color: #fff; font-size: 12px; border-radius: 4px; outline: none; }
         .sell-reply-btn { background: var(--cyan); color: #000; border: none; padding: 8px 12px; font-weight: bold; border-radius: 4px; cursor: pointer; }
 
-        /* Inline Keyboard */
         .tg-keyboard { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; width: 100%; }
         .tg-btn-row { display: flex; gap: 6px; justify-content: space-between; flex-wrap: wrap; width: 100%; }
         .tg-btn-inline { background: rgba(0, 0, 0, 0.3); color: #5eb5f7; border: 1px solid rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; cursor: pointer; flex: 1; min-width: 45%; text-align: center; font-size: 11px; font-weight: bold; }
 
         .copyable-num { background: rgba(0, 210, 255, 0.15); color: var(--cyan); padding: 2px 6px; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration: underline dashed; }
         
-        /* --- PANEL REKAP HISTORI LOG --- */
         .analytics-card { background: var(--surface); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .log-list-frame { flex: 1; min-height: 0; background: #0b0c0f; border: 1px solid var(--border); border-radius: 8px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .log-item { background: var(--surface2); padding: 12px; border-radius: 6px; border-left: 3px solid var(--cyan); font-size: 12px; }
 
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 20px; font-weight: bold; opacity: 0; transition: opacity 0.3s; z-index: 10000; pointer-events: none;}
 
-        /* Timer Floating Pod Layout */
         .timer-floating-pod {
             position: fixed; bottom: 20px; right: 20px; background: var(--surface2);
             border: 2px solid var(--cyan); border-radius: 30px; display: flex; align-items: center;
@@ -147,14 +137,6 @@
 </head>
 <body>
 
-<div class="top-bar-mobile">
-    <div style="display: flex; gap: 12px; align-items: center;">
-        <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ FOERTA</button>
-        <div class="mobile-clock-container" id="mobileClock">00:00:00 WIB</div>
-    </div>
-    <button class="btn-outline" id="btnToggleMenuMobile" style="padding: 6px 10px; font-size: 11px; border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); background: transparent; cursor: pointer; font-weight: bold;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
-</div>
-
 <nav class="sidebar" id="sidebar">
   <div style="padding: 20px; border-bottom: 1px solid var(--border); margin-bottom: 10px;">
       <h2 style="color:var(--cyan); margin:0; font-family:'Syne',sans-serif; letter-spacing:2px;">FOERTA</h2>
@@ -162,9 +144,19 @@
   </div>
   <div class="nav-item active" id="nav-chat" onclick="switchPage('chat')" style="padding: 12px 20px; cursor:pointer; color:var(--cyan); font-weight:bold; background:rgba(0,210,255,0.1); border-left:3px solid var(--cyan);">🤖 Panel Bot OTP</div>
   <div class="nav-item" id="nav-logs" onclick="switchPage('logs')" style="padding: 12px 20px; cursor:pointer; color:var(--text2); font-weight:bold;">📊 Histori & Analitik</div>
+  <div class="nav-item" onclick="toggleTimerVisibility()" style="padding: 12px 20px; cursor:pointer; color:var(--text2); font-weight:bold;"><span id="nav-toggle-timer">⏱️ Sembunyikan Timer</span></div>
 </nav>
 
 <div class="main">
+
+  <div class="top-bar-mobile">
+      <div style="display: flex; gap: 12px; align-items: center;">
+          <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ FOERTA</button>
+          <div class="mobile-clock-container" id="mobileClock">00:00:00 WIB</div>
+      </div>
+      <button class="btn-outline" id="btnToggleMenuMobile" style="padding: 6px 10px; font-size: 11px; border: 1px solid var(--cyan); border-radius: 6px; color: var(--cyan); background: transparent; cursor: pointer; font-weight: bold;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
+  </div>
+
   <div class="header-desktop">
     <div style="display: flex; gap: 15px; align-items: center;">
         <div style="background: var(--surface2); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--cyan); font-size: 12px; color: var(--cyan); font-weight: bold;" id="conn-status">🟢 Sistem Terhubung</div>
@@ -184,7 +176,7 @@
                 <h3 style="margin: 0; font-size: 14px; color: var(--text2); font-family: 'Syne', sans-serif; text-transform: uppercase;">▶ INTERAKSI PANEL BOT</h3>
             </div>
             
-            <div class="bot-tabs-group" id="botTabsGroupContainer">
+            <div class="bot-tabs-group" id="botTabsGroupContainer" style="display: none;">
                 <div class="tabs-title-sub">❖ Daftar Sesi Bot OTP Utama</div>
                 <div class="bot-tabs">
                     <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">@PBDxbot</button>
@@ -277,6 +269,22 @@
         document.getElementById('sidebar').classList.remove('show');
     }
 
+    // --- FITUR TOGGLE VISIBILITAS TIMER ---
+    let isTimerVisible = true;
+    function toggleTimerVisibility() {
+        const pod = document.getElementById('timer-pod');
+        const btnText = document.getElementById('nav-toggle-timer');
+        isTimerVisible = !isTimerVisible;
+        if (isTimerVisible) {
+            pod.style.display = 'flex';
+            btnText.innerText = '⏱️ Sembunyikan Timer';
+        } else {
+            pod.style.display = 'none';
+            btnText.innerText = '⏱️ Tampilkan Timer';
+        }
+        document.getElementById('sidebar').classList.remove('show');
+    }
+
     // --- TIMESTAMPS & RELATIVE TIME ---
     function renderDynamicRelativeTime(epochMs) {
         const diffMins = Math.floor((Date.now() - epochMs) / 60000);
@@ -295,20 +303,23 @@
     }
     setInterval(updateAllRelativeTimestamps, 30000);
 
-    // --- TOGGLE LIST MENU BOT (SLIDE EFEK) ---
+    // --- TOGGLE LIST MENU BOT (SLIDE EFEK YANG AKURAT) ---
     function toggleBotMenu() {
         const box = document.getElementById('botTabsGroupContainer');
         const btnM = document.getElementById('btnToggleMenuMobile');
         const btnD = document.getElementById('btnToggleMenuDesktop');
         
-        if (box.style.display === 'flex') {
-            box.style.display = 'none';
-            if(btnM) btnM.innerText = '🤖 Kelola Bot ▼';
-            if(btnD) btnD.innerText = '🤖 Kelola Bot ▼';
-        } else {
+        // Pengecekan status display menggunakan computedStyle (Sangat Aman)
+        const isHidden = window.getComputedStyle(box).display === 'none';
+        
+        if (isHidden) {
             box.style.display = 'flex';
             if(btnM) btnM.innerText = '🤖 Kelola Bot ▲';
             if(btnD) btnD.innerText = '🤖 Kelola Bot ▲';
+        } else {
+            box.style.display = 'none';
+            if(btnM) btnM.innerText = '🤖 Kelola Bot ▼';
+            if(btnD) btnD.innerText = '🤖 Kelola Bot ▼';
         }
     }
 
@@ -331,8 +342,7 @@
         document.getElementById('tgMessagesArea').innerHTML = '<div style="text-align:center; color:var(--text2); margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>';
         socket.emit('fetch_tg_history', botUsername);
         
-        // Auto tutup menu di HP setelah milih bot agar layar lega
-        if(window.innerWidth <= 768) {
+        if(window.innerWidth <= 768) { 
             document.getElementById('botTabsGroupContainer').style.display = 'none';
             document.getElementById('btnToggleMenuMobile').innerText = '🤖 Kelola Bot ▼';
         }
