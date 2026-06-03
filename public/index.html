@@ -7,21 +7,26 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>FOERTA — Telegram Center</title>
-    <link rel="stylesheet" href="style.css?v=11.28">
+    <link rel="stylesheet" href="style.css?v=11.29">
     <style>
         /* --- KENDALI FIX LAYOUT (ANTI BLANK/SQUISH DI HP) --- */
         * { box-sizing: border-box; }
         
-        /* 100dvh sangat penting agar tidak terpotong URL bar Safari/Chrome HP */
+        /* Teknik penguncian absolut layaknya aplikasi Native */
         html, body {
-            margin: 0; padding: 0; width: 100vw; height: 100dvh; 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            position: fixed; top: 0; left: 0; bottom: 0; right: 0;
             overflow: hidden; font-family: 'JetBrains Mono', monospace;
-            background: #0b0c0f; color: #FFFFFF; display: flex; flex-direction: row; 
+            background: #0b0c0f; color: #FFFFFF;
+        }
+
+        #app-container {
+            display: flex; flex-direction: row; width: 100%; height: 100%;
         }
 
         /* --- SIDEBAR --- */
         .sidebar {
-            width: 220px; height: 100dvh; background: #1A1D24; 
+            width: 220px; height: 100%; background: #1A1D24; 
             border-right: 1px solid #3A4150; display: flex; 
             flex-direction: column; transition: left 0.3s ease; 
             z-index: 2000; flex-shrink: 0;
@@ -29,8 +34,8 @@
 
         /* --- MAIN AREA --- */
         .main {
-            flex: 1; min-width: 0; display: flex; flex-direction: column; 
-            height: 100dvh; position: relative; overflow: hidden;
+            flex: 1; display: flex; flex-direction: column; 
+            height: 100%; position: relative; min-width: 0;
         }
 
         .header-desktop {
@@ -39,12 +44,12 @@
         }
 
         .content {
-            flex: 1; min-height: 0; display: flex; flex-direction: column; 
-            padding: 15px; overflow: hidden; position: relative;
+            flex: 1; display: flex; flex-direction: column; 
+            padding: 15px; overflow: hidden; position: relative; min-height: 0;
         }
 
         .page {
-            display: none; flex: 1; min-height: 0; flex-direction: column; overflow: hidden;
+            display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0;
         }
         .page.active { display: flex; }
 
@@ -58,7 +63,7 @@
             .header-desktop { display: none !important; }
             .content { padding: 10px; }
             
-            /* TOP BAR STICKY MOBILE */
+            /* TOP BAR STICKY MOBILE TERPASANG DENGAN BENAR */
             .top-bar-mobile { 
                 display: flex; width: 100%; height: 60px; background: #2D323E; 
                 align-items: center; justify-content: space-between; padding: 0 12px; 
@@ -80,23 +85,23 @@
 
         /* --- DESAIN CARD & CHAT AREA --- */
         .card { 
-            flex: 1; min-height: 0; display: flex; flex-direction: column; 
+            flex: 1; display: flex; flex-direction: column; 
             background: #1A1D24; border: 1px solid #3A4150; 
-            border-radius: 8px; padding: 10px; width: 100%; overflow: hidden;
+            border-radius: 8px; padding: 10px; width: 100%; overflow: hidden; min-height: 0;
         }
 
         .bot-tabs-group { 
-            display: none; flex-direction: column; gap: 8px; margin-bottom: 10px; 
+            display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; 
             background: #2D323E; padding: 10px; border-radius: 8px; 
             border: 1px solid #3A4150; flex-shrink: 0; max-height: 35vh; overflow-y: auto;
             animation: fadeUp 0.2s ease;
         }
         .tabs-title-sub { font-size: 10px; color: #00D2FF; font-weight: bold; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase;}
         .bot-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-        .bot-tab { background: #1A1D24; color: #A0A5B5; border: 1px solid #3A4150; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: bold; font-size: 11px; }
+        .bot-tab { background: #1A1D24; color: #A0A5B5; border: 1px solid #3A4150; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: bold; font-size: 11px; transition: 0.2s; }
         .bot-tab.active { background: rgba(0, 210, 255, 0.15); color: #00D2FF; border-color: #00D2FF; }
 
-        .chat-wrapper { flex: 1; min-height: 0; display: flex; flex-direction: column; background: #0b0c0f; border-radius: 8px; border: 1px solid #3A4150; overflow: hidden; }
+        .chat-wrapper { flex: 1; display: flex; flex-direction: column; background: #0b0c0f; border-radius: 8px; border: 1px solid #3A4150; overflow: hidden; min-height: 0; }
         .messages-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 12px; width: 100%; } 
 
         .msg-bubble { position: relative; padding: 12px 16px; padding-right: 35px; border-radius: 12px; max-width: 90%; line-height: 1.5; font-size: 13px; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; display: flex; flex-direction: column; }
@@ -141,94 +146,97 @@
 </head>
 <body>
 
-<div class="top-bar-mobile">
-    <div style="display: flex; gap: 12px; align-items: center;">
-        <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ FOERTA</button>
-        <div class="mobile-clock-container" id="mobileClock">00:00:00 WIB</div>
-    </div>
-    <button id="btnToggleMenuMobile" style="padding: 6px 10px; font-size: 11px; border: 1px solid #00D2FF; border-radius: 6px; color: #00D2FF; background: transparent; cursor: pointer; font-weight: bold;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
-</div>
+<div id="app-container">
 
-<nav class="sidebar" id="sidebar">
-  <div style="padding: 20px; border-bottom: 1px solid #3A4150; margin-bottom: 10px;">
-      <h2 style="color:#00D2FF; margin:0; font-family:'Syne',sans-serif; letter-spacing:2px;">FOERTA</h2>
-      <span style="color:#A0A5B5; font-size: 11px;">Telegram Center</span>
-  </div>
-  <div class="nav-item active" id="nav-chat" onclick="switchPage('chat')" style="padding: 12px 20px; cursor:pointer; color:#00D2FF; font-weight:bold; background:rgba(0,210,255,0.1); border-left:3px solid #00D2FF;">🤖 Panel Bot OTP</div>
-  <div class="nav-item" id="nav-logs" onclick="switchPage('logs')" style="padding: 12px 20px; cursor:pointer; color:#A0A5B5; font-weight:bold;">📊 Histori & Analitik</div>
-  <div class="nav-item" onclick="toggleTimerVisibility()" style="padding: 12px 20px; cursor:pointer; color:#A0A5B5; font-weight:bold;"><span id="nav-toggle-timer">⏱️ Sembunyikan Timer</span></div>
-</nav>
+    <nav class="sidebar" id="sidebar">
+      <div style="padding: 20px; border-bottom: 1px solid #3A4150; margin-bottom: 10px;">
+          <h2 style="color:#00D2FF; margin:0; font-family:'Syne',sans-serif; letter-spacing:2px;">FOERTA</h2>
+          <span style="color:#A0A5B5; font-size: 11px;">Telegram Center</span>
+      </div>
+      <div class="nav-item active" id="nav-chat" onclick="switchPage('chat')" style="padding: 12px 20px; cursor:pointer; color:#00D2FF; font-weight:bold; background:rgba(0,210,255,0.1); border-left:3px solid #00D2FF;">🤖 Panel Bot OTP</div>
+      <div class="nav-item" id="nav-logs" onclick="switchPage('logs')" style="padding: 12px 20px; cursor:pointer; color:#A0A5B5; font-weight:bold;">📊 Histori & Analitik</div>
+      <div class="nav-item" onclick="toggleTimerVisibility()" style="padding: 12px 20px; cursor:pointer; color:#A0A5B5; font-weight:bold;"><span id="nav-toggle-timer">⏱️ Sembunyikan Timer</span></div>
+    </nav>
 
-<div class="main">
-  <div class="header-desktop">
-    <div style="display: flex; gap: 15px; align-items: center;">
-        <div style="background: #2D323E; padding: 8px 15px; border-radius: 8px; border: 1px solid #00D2FF; font-size: 12px; color: #00D2FF; font-weight: bold;" id="conn-status">🟢 Sistem Terhubung</div>
-        <button id="btnToggleMenuDesktop" style="padding: 8px 15px; font-size: 12px; border: 1px solid #00D2FF; border-radius: 6px; color: #00D2FF; background: transparent; cursor: pointer; font-weight: bold;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
-    </div>
-    <div style="background: #2D323E; padding: 8px 15px; border-radius: 8px; border: 1px solid #3A4150;">
-        <span id="desktopClock" style="font-weight: bold; color: #00D2FF; font-size: 13px;">00:00:00 WIB</span>
-    </div>
-  </div>
+    <div class="main">
+        
+      <div class="top-bar-mobile">
+          <div style="display: flex; gap: 12px; align-items: center;">
+              <button class="hamburger-btn" onclick="document.getElementById('sidebar').classList.toggle('show')">☰ FOERTA</button>
+              <div class="mobile-clock-container" id="mobileClock">00:00:00 WIB</div>
+          </div>
+          <button id="btnToggleMenuMobile" style="padding: 6px 10px; font-size: 11px; border: 1px solid #00D2FF; border-radius: 6px; color: #00D2FF; background: transparent; cursor: pointer; font-weight: bold;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
+      </div>
 
-  <div class="content">
-    
-    <div class="page active" id="page-botpanel">
-        <div class="card">
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink: 0;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <h3 style="margin: 0; font-size: 13px; color: #A0A5B5; font-family: 'Syne', sans-serif; text-transform: uppercase;">▶ PANEL BOT</h3>
-                    <button style="background: #00D2FF; color: #000; border: none; padding: 4px 10px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 10px;" onclick="sendTelegramCommand('/start')">▶ /START</button>
-                </div>
-            </div>
-            
-            <div class="bot-tabs-group" id="botTabsGroupContainer" style="display: none;">
-                <div class="tabs-title-sub">❖ Daftar Sesi Bot OTP Utama</div>
-                <div class="bot-tabs">
-                    <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">@PBDxbot</button>
-                    <button class="bot-tab" onclick="switchBot('@ROCKETOTP_BOT', this)">@ROCKETOTP_BOT</button>
-                    <button class="bot-tab" onclick="switchBot('@mrotpgen3_bot', this)">@mrotpgen3_bot</button>
-                    <button class="bot-tab" onclick="switchBot('@IMS_OTP_Number_BOT', this)">@IMS_OTP_Number_BOT</button>
-                    <button class="bot-tab" onclick="switchBot('@KING_SMS_PANEL_BOT', this)">@KING_SMS_PANEL_BOT</button>
-                    <button class="bot-tab" onclick="switchBot('@OneSmsXbot', this)">@OneSmsXbot</button>
-                    <button class="bot-tab" onclick="switchBot('@NokosxBot', this)">@NokosxBot</button>
+      <div class="header-desktop">
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <div style="background: #2D323E; padding: 8px 15px; border-radius: 8px; border: 1px solid #00D2FF; font-size: 12px; color: #00D2FF; font-weight: bold;" id="conn-status">🟢 Sistem Terhubung</div>
+            <button id="btnToggleMenuDesktop" style="padding: 8px 15px; font-size: 12px; border: 1px solid #00D2FF; border-radius: 6px; color: #00D2FF; background: transparent; cursor: pointer; font-weight: bold;" onclick="toggleBotMenu()">🤖 Kelola Bot ▼</button>
+        </div>
+        <div style="background: #2D323E; padding: 8px 15px; border-radius: 8px; border: 1px solid #3A4150;">
+            <span id="desktopClock" style="font-weight: bold; color: #00D2FF; font-size: 13px;">00:00:00 WIB</span>
+        </div>
+      </div>
+
+      <div class="content">
+        
+        <div class="page active" id="page-botpanel">
+            <div class="card">
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-shrink: 0;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <h3 style="margin: 0; font-size: 13px; color: #A0A5B5; font-family: 'Syne', sans-serif; text-transform: uppercase;">▶ PANEL BOT</h3>
+                        <button style="background: #00D2FF; color: #000; border: none; padding: 4px 10px; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 10px;" onclick="sendTelegramCommand('/start')">▶ /START</button>
+                    </div>
                 </div>
                 
-                <div class="tabs-title-sub" style="margin-top: 10px;">❖ Sektor Penjualan (Bot Sell)</div>
-                <div class="bot-tabs">
-                    <button class="bot-tab" onclick="switchBot('@ALL_WS_Sell_BOT', this)">@ALL_WS_Sell_BOT</button>
-                    <button class="bot-tab" onclick="switchBot('@Ws_Sell_World_bot', this)">@Ws_Sell_World_bot</button>
-                    <button class="bot-tab" onclick="switchBot('@Sellws_bot', this)">@Sellws_bot</button>
-                    <button class="bot-tab" onclick="switchBot('@wsotp200bot', this)">@wsotp200bot</button>
+                <div class="bot-tabs-group" id="botTabsGroupContainer" style="display: none;">
+                    <div class="tabs-title-sub">❖ Daftar Sesi Bot OTP Utama</div>
+                    <div class="bot-tabs">
+                        <button class="bot-tab active" onclick="switchBot('@PBDxbot', this)">@PBDxbot</button>
+                        <button class="bot-tab" onclick="switchBot('@ROCKETOTP_BOT', this)">@ROCKETOTP_BOT</button>
+                        <button class="bot-tab" onclick="switchBot('@mrotpgen3_bot', this)">@mrotpgen3_bot</button>
+                        <button class="bot-tab" onclick="switchBot('@IMS_OTP_Number_BOT', this)">@IMS_OTP_Number_BOT</button>
+                        <button class="bot-tab" onclick="switchBot('@KING_SMS_PANEL_BOT', this)">@KING_SMS_PANEL_BOT</button>
+                        <button class="bot-tab" onclick="switchBot('@OneSmsXbot', this)">@OneSmsXbot</button>
+                        <button class="bot-tab" onclick="switchBot('@NokosxBot', this)">@NokosxBot</button>
+                    </div>
+                    
+                    <div class="tabs-title-sub" style="margin-top: 10px;">❖ Sektor Penjualan (Bot Sell)</div>
+                    <div class="bot-tabs">
+                        <button class="bot-tab" onclick="switchBot('@ALL_WS_Sell_BOT', this)">@ALL_WS_Sell_BOT</button>
+                        <button class="bot-tab" onclick="switchBot('@Ws_Sell_World_bot', this)">@Ws_Sell_World_bot</button>
+                        <button class="bot-tab" onclick="switchBot('@Sellws_bot', this)">@Sellws_bot</button>
+                        <button class="bot-tab" onclick="switchBot('@wsotp200bot', this)">@wsotp200bot</button>
+                    </div>
+                </div>
+
+                <div class="chat-wrapper">
+                    <div class="messages-area" id="tgMessagesArea">
+                        <div style="text-align:center; color:#A0A5B5; margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="chat-wrapper">
-                <div class="messages-area" id="tgMessagesArea">
-                    <div style="text-align:center; color:#A0A5B5; margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>
+        <div class="page" id="page-otphistory">
+            <div class="analytics-card">
+                <div>
+                    <div style="font-size: 11px; color: #A0A5B5; text-transform: uppercase;">Total OTP Masuk Hari Ini</div>
+                    <div id="analytics-date" style="font-size: 12px; color: #00D2FF; font-weight: bold; margin-top: 2px;">Tanggal: --</div>
+                    <div id="analytics-counter-val" style="font-size: 42px; font-family: 'Syne', sans-serif; font-weight: 800; color: #00E676; margin-top: 5px;">0</div>
                 </div>
+                <button style="background: transparent; border: 1px solid #FF4466; color: #FF4466; font-size: 12px; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;" onclick="resetTodayCounterClick()">Reset Count</button>
+            </div>
+            <div class="log-list-frame" id="otpLogsListContainer">
+                <div style="text-align: center; color: #A0A5B5; font-size: 12px; margin-top: 20px;">Memuat data histori...</div>
             </div>
         </div>
+        
+      </div>
     </div>
 
-    <div class="page" id="page-otphistory">
-        <div class="analytics-card">
-            <div>
-                <div style="font-size: 11px; color: #A0A5B5; text-transform: uppercase;">Total OTP Masuk Hari Ini</div>
-                <div id="analytics-date" style="font-size: 12px; color: #00D2FF; font-weight: bold; margin-top: 2px;">Tanggal: --</div>
-                <div id="analytics-counter-val" style="font-size: 42px; font-family: 'Syne', sans-serif; font-weight: 800; color: #00E676; margin-top: 5px;">0</div>
-            </div>
-            <button style="background: transparent; border: 1px solid #FF4466; color: #FF4466; font-size: 12px; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold;" onclick="resetTodayCounterClick()">Reset Count</button>
-        </div>
-        <div class="log-list-frame" id="otpLogsListContainer">
-            <div style="text-align: center; color: #A0A5B5; font-size: 12px; margin-top: 20px;">Memuat data histori...</div>
-        </div>
-    </div>
-    
-  </div>
-</div>
-
-<div id="toast">Nomor berhasil disalin!</div>
+</div> <div id="toast">Nomor berhasil disalin!</div>
 
 <div id="timer-pod" class="timer-floating-pod">
     <div class="timer-click-zone" id="timer-display" onclick="triggerTimerStart()">⏱️ Start 01:30</div>
@@ -237,7 +245,7 @@
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-    const socket = io(); // Menggunakan websocket default
+    const socket = io({ transports: ['websocket'], upgrade: false });
     let activeTelegramBot = '@PBDxbot';
 
     // --- MANAJEMEN DUAL LIVE CLOCKS ---
@@ -306,13 +314,12 @@
     }
     setInterval(updateAllRelativeTimestamps, 30000);
 
-    // --- TOGGLE LIST MENU BOT (SLIDE EFEK YANG AKURAT) ---
+    // --- TOGGLE LIST MENU BOT YANG 100% AMAN ---
     function toggleBotMenu() {
         const box = document.getElementById('botTabsGroupContainer');
         const btnM = document.getElementById('btnToggleMenuMobile');
         const btnD = document.getElementById('btnToggleMenuDesktop');
         
-        // Cek inline style dengan aman
         if (box.style.display === 'none' || box.style.display === '') {
             box.style.display = 'flex';
             if(btnM) btnM.innerText = '🤖 Kelola Bot ▲';
@@ -343,7 +350,6 @@
         document.getElementById('tgMessagesArea').innerHTML = '<div style="text-align:center; color:#A0A5B5; margin-top:20px; font-size:12px;">Memuat riwayat chat...</div>';
         socket.emit('fetch_tg_history', botUsername);
         
-        // Auto tutup menu di HP setelah milih bot
         if(window.innerWidth <= 768) { 
             document.getElementById('botTabsGroupContainer').style.display = 'none';
             document.getElementById('btnToggleMenuMobile').innerText = '🤖 Kelola Bot ▼';
