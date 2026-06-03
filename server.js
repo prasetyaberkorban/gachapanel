@@ -42,7 +42,7 @@ const SessionModel = mongoose.model('TelegramSession', SessionSchema);
 const OtpLogSchema = new mongoose.Schema({
     bot: String,
     text: String,
-    dateStr: String, // YYYY-MM-DD
+    dateStr: String, 
     timestamp: { type: Date, default: Date.now }
 });
 const OtpLogModel = mongoose.model('OtpLog', OtpLogSchema);
@@ -54,7 +54,6 @@ const OtpCounterSchema = new mongoose.Schema({
 });
 const OtpCounterModel = mongoose.model('OtpCounter', OtpCounterSchema);
 
-// Helper dapatkan string tanggal Jakarta (WIB)
 function getJakartaDateStr() {
     const jktDate = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
     return `${jktDate.getFullYear()}-${String(jktDate.getMonth() + 1).padStart(2, '0')}-${String(jktDate.getDate()).padStart(2, '0')}`;
@@ -83,28 +82,23 @@ async function startSystem() {
             try {
                 let entity = await client.getEntity(b);
                 botEntities[entity.id.toString()] = { username: b, entity: entity };
-            } catch (e) {}
+            } catch (e) {
+                console.log(`[INFO] Bot ${b} belum pernah dihubungi.`);
+            }
         }
 
-        // Ambil Data & Cek Deteksi Pola OTP
         const checkAndSaveOtp = async (botName, text) => {
             const hasOtpWord = /otp|code|kode|received|assigned/i.test(text);
             const hasNumbers = /\d{3,6}/.test(text);
             
             if (hasOtpWord && hasNumbers) {
                 const today = getJakartaDateStr();
-                
-                // Simpan Riwayat Log ke DB
                 await OtpLogModel.create({ bot: botName, text: text, dateStr: today });
-                
-                // Naikkan Hitungan Counter di DB
                 const counter = await OtpCounterModel.findOneAndUpdate(
                     { dateStr: today },
                     { $inc: { count: 1 } },
                     { upsert: true, new: true }
                 );
-                
-                // Kirim live update analytics ke Web Frontend
                 io.emit('analytics_update', { dateStr: today, count: counter.count });
             }
         };
@@ -139,7 +133,6 @@ async function startSystem() {
             };
         };
 
-        // LISTENER: Pesan Baru
         client.addEventHandler(async (event) => {
             const msg = event.message;
             if (!msg || !msg.peerId || !msg.peerId.userId) return;
@@ -148,12 +141,10 @@ async function startSystem() {
                 const parsed = parseMessageData(msg);
                 parsed.bot = botEntities[senderId].username;
                 io.emit('tg_message_update', parsed);
-                
                 if(!msg.out) await checkAndSaveOtp(parsed.bot, parsed.text);
             }
         }, new NewMessage({ incoming: true, outgoing: true }));
 
-        // LISTENER: Pesan Edit
         client.addEventHandler(async (update) => {
             let updatesToProcess = update.updates ? update.updates : [update];
             for (const u of updatesToProcess) {
@@ -167,14 +158,12 @@ async function startSystem() {
                         const parsed = parseMessageData(msg);
                         parsed.bot = botEntities[senderId].username;
                         io.emit('tg_message_update', parsed);
-                        
                         if(!msg.out) await checkAndSaveOtp(parsed.bot, parsed.text);
                     }
                 }
             }
         });
 
-        // Timer Interval Thread
         function runServerTimer() {
             if (timerIntervalId) clearInterval(timerIntervalId);
             timerIntervalId = setInterval(() => {
@@ -192,11 +181,9 @@ async function startSystem() {
             }, 1000);
         }
 
-        // IO CHANNELS COMMUNICATIONS
         io.on('connection', async (socket) => {
             socket.emit('timer_update', timerState.active ? { active: true, timeLeft: timerState.timeLeft, status: 'running' } : { active: false, timeLeft: 90, status: 'idle' });
 
-            // Ambil data counter aktif hari ini saat web dibuka
             const todayStr = getJakartaDateStr();
             const currentCounter = await OtpCounterModel.findOne({ dateStr: todayStr });
             socket.emit('analytics_init', { dateStr: todayStr, count: currentCounter ? currentCounter.count : 0 });
@@ -210,10 +197,11 @@ async function startSystem() {
                         return data;
                     });
                     socket.emit('tg_history', { bot: botUsername, messages: parsedHistory });
-                } catch (e) {}
+                } catch (e) {
+                    socket.emit('tg_history', { bot: botUsername, messages: [] });
+                }
             });
 
-            // Ambil Seluruh Log OTP dari DB Mongodb
             socket.on('fetch_otp_logs', async () => {
                 try {
                     const logs = await OtpLogModel.find().sort({ timestamp: -1 }).limit(50);
@@ -221,7 +209,6 @@ async function startSystem() {
                 } catch (e) {}
             });
 
-            // Fitur Reset Counter Harian
             socket.on('reset_today_counter', async () => {
                 const today = getJakartaDateStr();
                 await OtpCounterModel.findOneAndUpdate({ dateStr: today }, { $set: { count: 0 } }, { upsert: true });
@@ -251,7 +238,7 @@ async function startSystem() {
 
             socket.on('start_server_timer', () => {
                 timerState.active = true;
-                timerState.endTime = Date.now() + 90000; // 90 Detik = 1 Menit 30 Detik
+                timerState.endTime = Date.now() + 90000;
                 timerState.timeLeft = 90;
                 io.emit('timer_update', { active: true, timeLeft: 90, status: 'running' });
                 runServerTimer();
