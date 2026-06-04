@@ -145,7 +145,6 @@ async function startSystem() {
                     const channel = discordClient.channels.cache.get(DISCORD_CHANNEL_ID);
                     if (channel) {
                         
-                        // FORMAT TEXT MENGGUNAKAN BLOCKQUOTE AGAR BISA DI-SELECT DI HP
                         let contentLines = parsed.text.split('\n').map(line => `> ${line}`).join('\n');
                         let contentStr = `🤖 **[${parsed.bot}]**\n${contentLines}`;
                         
@@ -155,7 +154,6 @@ async function startSystem() {
                         let foundNums = new Set();
                         let extraButtons = [];
 
-                        // Pilah Tombol Bawaan Telegram
                         if (msg.replyMarkup && msg.replyMarkup.rows) {
                             msg.replyMarkup.rows.forEach(row => {
                                 row.buttons.forEach(btn => {
@@ -170,7 +168,6 @@ async function startSystem() {
                             });
                         }
 
-                        // AUTO-EXTRACT NOMOR HP DARI TEXT JIKA TIDAK ADA TOMBOLNYA
                         const textNumbers = parsed.text.match(/\+\d{10,15}/g) || [];
                         textNumbers.forEach(n => {
                             if (!foundNums.has(n)) {
@@ -179,14 +176,12 @@ async function startSystem() {
                             }
                         });
 
-                        // AUTO-EXTRACT KODE OTP DARI TEXT
                         const otpMatch = parsed.text.match(/\b\d{3}[-\s]?\d{3}\b/);
                         if (otpMatch && hasOtpWord) {
                             let otpClean = otpMatch[0].replace(/[-\s]/g, '');
                             extraButtons.push({ text: `🔑 ${otpClean}`, id: `otp_${otpClean}`, style: ButtonStyle.Success });
                         }
 
-                        // ALGORITMA PACKING TOMBOL (Maks 5 kolom x 5 baris)
                         let currentRow = new ActionRowBuilder();
                         const addBtnToRow = (btnBuilder) => {
                             if (currentRow.components.length >= 5) {
@@ -196,19 +191,16 @@ async function startSystem() {
                             if (discordComponents.length < 5) currentRow.addComponents(btnBuilder);
                         };
 
-                        // 1. Masukkan Tombol Nomor Telegram (Sebagai Auto-Copy di Discord)
                         numButtons.forEach(btn => {
                             let cleanNum = btn.text.replace(/[^\d\+]/g, '');
                             if(!cleanNum) cleanNum = btn.text;
                             addBtnToRow(new ButtonBuilder().setCustomId('num_' + cleanNum.substring(0,80)).setLabel(btn.text.substring(0,80)).setStyle(ButtonStyle.Secondary));
                         });
 
-                        // 2. Masukkan Tombol Ekstra (Nomor HP / Kode OTP hasil extract)
                         extraButtons.forEach(btn => {
                             addBtnToRow(new ButtonBuilder().setCustomId(btn.id).setLabel(btn.text).setStyle(btn.style));
                         });
 
-                        // 3. Masukkan Tombol Aksi (Change Number, dll)
                         actionButtons.forEach(btn => {
                             let customId = Math.random().toString(36).substr(2, 9);
                             if (discordButtonCache.size > 2000) discordButtonCache.clear();
@@ -231,7 +223,6 @@ async function startSystem() {
                             addBtnToRow(dBtn);
                         });
 
-                        // 4. Tombol Delete khusus OTP
                         if (isOtpMessage) {
                             addBtnToRow(new ButtonBuilder().setCustomId('del_' + parsed.messageId).setLabel('🗑️ Delete').setStyle(ButtonStyle.Danger));
                         }
@@ -240,15 +231,12 @@ async function startSystem() {
 
                         const msgPayload = { content: contentStr.substring(0, 2000), components: discordComponents };
 
-                        // KIRIM / UPDATE PESAN
                         if (isEdit) {
                             const oldDiscordMsg = tgToDiscordMsg.get(parsed.messageId);
                             if (isOtpMessage) {
-                                // JIKA MENGANDUNG OTP, JADIKAN PESAN BARU AGAR ADA NOTIF PING DI HP
                                 if (oldDiscordMsg) oldDiscordMsg.delete().catch(()=>{});
                                 channel.send(msgPayload).then(m => tgToDiscordMsg.set(parsed.messageId, m)).catch(()=>{});
                             } else {
-                                // EDIT BIASA (Silent Edit)
                                 if (oldDiscordMsg) oldDiscordMsg.edit(msgPayload).catch(()=>{});
                                 else channel.send(msgPayload).then(m => tgToDiscordMsg.set(parsed.messageId, m)).catch(()=>{});
                             }
@@ -270,52 +258,50 @@ async function startSystem() {
             }
         });
 
-        // --- DISCORD INTERACTION HANDLER (KLIK TOMBOL & MENU) ---
+        // --- DISCORD INTERACTION HANDLER ---
         discordClient.on('interactionCreate', async (interaction) => {
             
             // 1. Menu Dropdown Bot (!menu)
             if (interaction.isStringSelectMenu() && interaction.customId === 'bot_select') {
                 activeDiscordBot = interaction.values[0];
-                await interaction.update({ content: `✅ Panel Discord berhasil dialihkan ke **${activeDiscordBot}**`, components: [] });
+                await interaction.update({ content: `✅ Panel Discord dialihkan ke **${activeDiscordBot}**`, components: [] });
                 return;
             }
 
             if (!interaction.isButton()) return;
 
-            // 2. Tombol Copy Nomor HP Khusus
+            // 2. Tombol Copy Nomor HP Khusus (Dengan format Code Block ala Discord)
             if (interaction.customId.startsWith('num_')) {
                 const num = interaction.customId.replace('num_', '');
-                return interaction.reply({ content: num, ephemeral: true });
+                return interaction.reply({ content: `\`\`\`text\n${num}\n\`\`\``, ephemeral: true });
             }
 
-            // 3. Tombol Copy OTP Khusus
+            // 3. Tombol Copy OTP Khusus (Dengan format Code Block ala Discord)
             if (interaction.customId.startsWith('otp_')) {
                 const otp = interaction.customId.replace('otp_', '');
-                return interaction.reply({ content: otp, ephemeral: true });
+                return interaction.reply({ content: `\`\`\`text\n${otp}\n\`\`\``, ephemeral: true });
             }
 
             // 4. Tombol Delete Pesan OTP
             if (interaction.customId.startsWith('del_')) {
                 const tgMsgId = parseInt(interaction.customId.split('_')[1]);
                 try {
-                    await interaction.deferUpdate(); // SILENT ACTION (tanpa notif loading)
+                    await interaction.deferUpdate(); 
                     await interaction.message.delete();
                     await client.deleteMessages(activeDiscordBot, [tgMsgId], { revoke: true });
                 } catch(e) {}
                 return;
             }
 
-            // 5. Tombol Aksi Normal Telegram (Change Number, Get Script, dll)
+            // 5. Tombol Aksi Normal Telegram
             const cacheData = discordButtonCache.get(interaction.customId);
             if (!cacheData) {
-                try { await interaction.deferUpdate(); } catch(e){} // Biarkan mati diam-diam jika expired
+                try { await interaction.deferUpdate(); } catch(e){} 
                 return;
             }
 
             try {
-                // SILENT ACTION: Meniadakan balasan "(edited) Perintah terkirim!" 
                 await interaction.deferUpdate(); 
-                
                 if (cacheData.data) {
                     await client.invoke(new Api.messages.GetBotCallbackAnswer({ peer: cacheData.target, msgId: cacheData.msgId, data: cacheData.data }));
                 } else if (cacheData.command) {
@@ -328,7 +314,6 @@ async function startSystem() {
         discordClient.on('messageCreate', async (msg) => {
             if (msg.author.bot || msg.channelId !== DISCORD_CHANNEL_ID) return;
 
-            // Perintah memunculkan dropdown Menu Bot
             if (msg.content === '!menu' || msg.content === '/menu' || msg.content === '!panel') {
                 const selectMenu = new StringSelectMenuBuilder()
                     .setCustomId('bot_select')
@@ -339,7 +324,6 @@ async function startSystem() {
                 return msg.reply({ content: '🎛️ **FOERTA Discord Controller**\nPilih bot di bawah ini untuk mengalihkan sinyal:', components: [row] });
             }
 
-            // Teruskan teks manual biasa ke Telegram
             try { await client.sendMessage(activeDiscordBot, { message: msg.content }); } catch(e) {}
         });
 
