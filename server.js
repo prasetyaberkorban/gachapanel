@@ -5,18 +5,30 @@ const { TelegramClient, Api } = require('telegram');
 const { StringSession } = require('telegram/sessions');
 const { NewMessage } = require('telegram/events');
 const mongoose = require('mongoose');
-const { Client: DiscordClient, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-// --- KONFIGURASI ENVIRONMENT ---
+// --- DISCORD INTEGRATION ---
+const { 
+    Client: DiscordClient, GatewayIntentBits, ActionRowBuilder, 
+    ButtonBuilder, ButtonStyle, StringSelectMenuBuilder 
+} = require('discord.js');
+
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "";
+const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID || "";
+
+const discordClient = new DiscordClient({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+let activeDiscordBot = '@PBDxbot';
+const discordButtonCache = new Map();
+const tgToDiscordMsg = new Map();
+const processedOtps = new Set();
+
+if (DISCORD_TOKEN) discordClient.login(DISCORD_TOKEN).then(() => console.log('[DISCORD] Bot Connected!')).catch(e => console.log('[DISCORD ERROR]', e));
+
+// --- KONFIGURASI ENVIRONMENT TELEGRAM & WEB ---
 const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 31303511; 
 const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550'; 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://foerta:SabrinaZD@foerta.bdkirjs.mongodb.net/?appName=foerta';
 const PORT = process.env.PORT || 3000;
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
-
-// DISCORD CONFIG
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "";
-const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID || "1195930707520913550";
 
 // BOTS CONFIG
 const TARGET_BOTS = [
@@ -31,12 +43,6 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 app.use(express.static('public'));
-
-const discordClient = new DiscordClient({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
-let activeDiscordBot = '@PBDxbot';
-const discordButtonCache = new Map();
-const tgToDiscordMsg = new Map(); // Cache ID Telegram ke ID Discord
-const processedOtps = new Set(); // Mencegah duplikat insert DB
 
 let timerState = { active: false, endTime: null, timeLeft: 90 };
 let timerIntervalId = null;
@@ -58,8 +64,6 @@ function getJakartaDateStr() {
 
 async function startSystem() {
     server.listen(PORT, () => console.log(`[WEB] Server running on port ${PORT}`));
-
-    if (DISCORD_TOKEN) discordClient.login(DISCORD_TOKEN).then(() => console.log('[DISCORD] Bot Connected!')).catch(e => console.log('[DISCORD ERROR]', e));
 
     try {
         await mongoose.connect(MONGODB_URI);
@@ -134,7 +138,7 @@ async function startSystem() {
 
                 // 1. BROADCAST KE WEB UI
                 io.emit('tg_message_update', parsed);
-                if (!msg.out && isOtpMessage) await checkAndSaveOtp(parsed.bot, parsed.text, parsed.messageId);
+                if (!msg.out && !isEdit && isOtpMessage) await checkAndSaveOtp(parsed.bot, parsed.text, parsed.messageId);
 
                 // 2. BROADCAST KE DISCORD
                 if (discordClient.isReady() && DISCORD_CHANNEL_ID && parsed.bot === activeDiscordBot) {
@@ -143,40 +147,78 @@ async function startSystem() {
                         let contentStr = `🤖 **[${parsed.bot}]**\n\`\`\`yaml\n${parsed.text}\n\`\`\``;
                         let discordComponents = [];
 
+                        // RESTRUKTURISASI TOMBOL: Pisahkan tombol Nomor HP dan Tombol Aksi agar tidak terpotong
                         if (msg.replyMarkup && msg.replyMarkup.rows) {
-                            // Max 4 baris agar sisa 1 baris untuk tombol Delete
-                            msg.replyMarkup.rows.slice(0, 4).forEach(row => {
-                                let actionRow = new ActionRowBuilder();
-                                row.buttons.slice(0, 5).forEach(btn => {
+                            let numButtons = [];
+                            let actionButtons = [];
+                            
+                            // Ekstrak dan pilah semua tombol dari Telegram
+                            msg.replyMarkup.rows.forEach(row => {
+                                row.buttons.forEach(btn => {
+                                    if (/\+?\d{8,15}/.test(btn.text) || btn.className === 'KeyboardButtonCopy') {
+                                        numButtons.push(btn);
+                                    } else {
+                                        actionButtons.push(btn);
+                                    }
+                                });
+                            });
+
+                            // Helper function untuk memasukkan kumpulan tombol ke ActionRow (Maks 5 per row)
+                            const packToRows = (btnArray, isNumber) => {
+                                let currentRow = new ActionRowBuilder();
+                                for (let btn of btnArray) {
                                     let customId = Math.random().toString(36).substr(2, 9);
                                     if (discordButtonCache.size > 1000) discordButtonCache.clear();
 
-                                    // Auto Warna Tombol Discord
-                                    let btnStyle = ButtonStyle.Primary; // Biru default
+                                    let btnStyle = ButtonStyle.Primary; 
                                     let btnTextLower = btn.text.toLowerCase();
-                                    if (btnTextLower.includes('change') || btnTextLower.includes('cancel') || btnTextLower.includes('filter')) btnStyle = ButtonStyle.Secondary; // Abu-abu
-                                    if (btnTextLower.includes('get') || btnTextLower.includes('join') || btnTextLower.includes('success')) btnStyle = ButtonStyle.Success; // Hijau
+                                    
+                                    // Pewarnaan tombol pintar
+                                    if (btnTextLower.includes('change') || btnTextLower.includes('cancel') || btnTextLower.includes('filter') || btnTextLower.includes('reject')) btnStyle = ButtonStyle.Secondary;
+                                    if (btnTextLower.includes('get') || btnTextLower.includes('join') || btnTextLower.includes('success') || btnTextLower.includes('buy')) btnStyle = ButtonStyle.Success;
+                                    if (isNumber) btnStyle = ButtonStyle.Secondary;
 
-                                    if (btn.url) {
-                                        actionRow.addComponents(new ButtonBuilder().setLabel(btn.text).setStyle(ButtonStyle.Link).setURL(btn.url));
+                                    let discordBtn;
+                                    if (isNumber) {
+                                        // Khusus tombol nomor, gunakan ID spesial 'num_'
+                                        let cleanNum = btn.text.replace(/[\s\-\(\)]/g, '');
+                                        discordBtn = new ButtonBuilder().setCustomId('num_' + cleanNum).setLabel(btn.text).setStyle(btnStyle);
+                                    } else if (btn.url) {
+                                        discordBtn = new ButtonBuilder().setLabel(btn.text).setStyle(ButtonStyle.Link).setURL(btn.url);
                                     } else if (btn.data) {
                                         discordButtonCache.set(customId, { target: parsed.bot, msgId: msg.id, data: btn.data });
-                                        actionRow.addComponents(new ButtonBuilder().setCustomId(customId).setLabel(btn.text).setStyle(btnStyle));
+                                        discordBtn = new ButtonBuilder().setCustomId(customId).setLabel(btn.text).setStyle(btnStyle);
                                     } else {
                                         discordButtonCache.set(customId, { target: parsed.bot, command: btn.text });
-                                        actionRow.addComponents(new ButtonBuilder().setCustomId(customId).setLabel(btn.text).setStyle(btnStyle));
+                                        discordBtn = new ButtonBuilder().setCustomId(customId).setLabel(btn.text).setStyle(btnStyle);
                                     }
-                                });
-                                if (actionRow.components.length > 0) discordComponents.push(actionRow);
-                            });
+
+                                    if (currentRow.components.length >= 5) {
+                                        if (discordComponents.length < 4) discordComponents.push(currentRow); // Max 4 row agar sisa ruang
+                                        currentRow = new ActionRowBuilder();
+                                    }
+                                    currentRow.addComponents(discordBtn);
+                                }
+                                if (currentRow.components.length > 0 && discordComponents.length < 4) {
+                                    discordComponents.push(currentRow);
+                                }
+                            };
+
+                            packToRows(numButtons, true);
+                            packToRows(actionButtons, false);
                         }
 
-                        // Tombol Delete KHUSUS pesan OTP
+                        // Tambahkan tombol khusus "Delete OTP" untuk pesan yang mengandung OTP
                         if (isOtpMessage) {
-                            let delRow = new ActionRowBuilder().addComponents(
-                                new ButtonBuilder().setCustomId('del_' + parsed.messageId).setLabel('🗑️ Delete OTP').setStyle(ButtonStyle.Danger)
-                            );
-                            if (discordComponents.length < 5) discordComponents.push(delRow);
+                            let delBtn = new ButtonBuilder().setCustomId('del_' + parsed.messageId).setLabel('🗑️ Delete OTP').setStyle(ButtonStyle.Danger);
+                            
+                            if (discordComponents.length === 0) {
+                                discordComponents.push(new ActionRowBuilder().addComponents(delBtn));
+                            } else {
+                                let lastRow = discordComponents[discordComponents.length - 1];
+                                if (lastRow.components.length < 5) lastRow.addComponents(delBtn);
+                                else if (discordComponents.length < 5) discordComponents.push(new ActionRowBuilder().addComponents(delBtn));
+                            }
                         }
 
                         const msgPayload = { content: contentStr.substring(0, 2000), components: discordComponents };
@@ -184,11 +226,11 @@ async function startSystem() {
                         if (isEdit) {
                             const oldDiscordMsg = tgToDiscordMsg.get(parsed.messageId);
                             if (isOtpMessage) {
-                                // EDIT BERISI OTP = KIRIM SEBAGAI PESAN BARU (Agar ada notifikasi ping di HP)
+                                // EDIT BERISI OTP = KIRIM SEBAGAI PESAN BARU (Agar mendapat notifikasi HP)
                                 if (oldDiscordMsg) oldDiscordMsg.delete().catch(()=>{});
                                 channel.send(msgPayload).then(m => tgToDiscordMsg.set(parsed.messageId, m)).catch(()=>{});
                             } else {
-                                // EDIT BIASA = EDIT DI DISCORD
+                                // EDIT BIASA = CUKUP EDIT DI DISCORD
                                 if (oldDiscordMsg) oldDiscordMsg.edit(msgPayload).catch(()=>{});
                                 else channel.send(msgPayload).then(m => tgToDiscordMsg.set(parsed.messageId, m)).catch(()=>{});
                             }
@@ -211,53 +253,73 @@ async function startSystem() {
             }
         });
 
-        // --- DISCORD INTERACTION HANDLER (KLIK TOMBOL) ---
+        // --- DISCORD INTERACTION HANDLER (KLIK TOMBOL & MENU) ---
         discordClient.on('interactionCreate', async (interaction) => {
-            if (!interaction.isButton()) return;
-
-            // Handle Tombol Delete OTP
-            if (interaction.customId.startsWith('del_')) {
-                const tgMsgId = parseInt(interaction.customId.split('_')[1]);
-                try {
-                    await client.deleteMessages(activeDiscordBot, [tgMsgId], { revoke: true });
-                    await interaction.message.delete();
-                } catch(e) { await interaction.reply({content: 'Gagal menghapus pesan.', ephemeral: true}); }
+            
+            // 1. Handle Pilihan dari Dropdown Menu (!menu)
+            if (interaction.isStringSelectMenu() && interaction.customId === 'bot_select') {
+                activeDiscordBot = interaction.values[0];
+                await interaction.update({ content: `✅ Panel Discord berhasil dialihkan untuk mengontrol **${activeDiscordBot}**`, components: [] });
                 return;
             }
 
-            // Handle Tombol Normal
+            if (!interaction.isButton()) return;
+
+            // 2. Handle Tombol Spesial (Copy Nomor)
+            if (interaction.customId.startsWith('num_')) {
+                const num = interaction.customId.replace('num_', '');
+                // Ephemeral message dengan format block code agar auto-copy di HP
+                return interaction.reply({ content: `\`${num}\``, ephemeral: true });
+            }
+
+            // 3. Handle Tombol Spesial (Delete OTP)
+            if (interaction.customId.startsWith('del_')) {
+                const tgMsgId = parseInt(interaction.customId.split('_')[1]);
+                try {
+                    await interaction.deferUpdate(); // Silently hide loading state
+                    await interaction.message.delete();
+                    await client.deleteMessages(activeDiscordBot, [tgMsgId], { revoke: true });
+                } catch(e) {}
+                return;
+            }
+
+            // 4. Handle Tombol Aksi Telegram Normal (Silent execution)
             const cacheData = discordButtonCache.get(interaction.customId);
-            if (!cacheData) return interaction.reply({ content: '❌ Tombol kedaluwarsa!', ephemeral: true });
+            if (!cacheData) {
+                // Biarkan saja atau defer untuk mematikan loading
+                try { await interaction.deferUpdate(); } catch(e){}
+                return;
+            }
 
             try {
+                // deferUpdate() membuat klik tombol tidak memunculkan notifikasi apapun (Super rapi)
+                await interaction.deferUpdate(); 
+                
                 if (cacheData.data) {
-                    await interaction.reply({ content: '⏳ Memproses ke Telegram...', ephemeral: true });
                     await client.invoke(new Api.messages.GetBotCallbackAnswer({ peer: cacheData.target, msgId: cacheData.msgId, data: cacheData.data }));
-                    await interaction.editReply({ content: '✅ Sukses!' });
                 } else if (cacheData.command) {
-                    await interaction.reply({ content: `⏳ Mengirim: ${cacheData.command}`, ephemeral: true });
                     await client.sendMessage(cacheData.target, { message: cacheData.command });
-                    await interaction.editReply({ content: '✅ Perintah terkirim!' });
                 }
-            } catch (err) { await interaction.editReply({ content: '❌ Gagal memproses ke Telegram.' }); }
+            } catch (err) {}
         });
 
         // --- DISCORD CHAT LISTENER ---
         discordClient.on('messageCreate', async (msg) => {
             if (msg.author.bot || msg.channelId !== DISCORD_CHANNEL_ID) return;
 
-            if (msg.content.startsWith('!switch ')) {
-                const targetBot = msg.content.split(' ')[1];
-                if (TARGET_BOTS.includes(targetBot)) {
-                    activeDiscordBot = targetBot;
-                    return msg.reply(`✅ Sistem Discord dialihkan ke **${activeDiscordBot}**`);
-                } else {
-                    return msg.reply(`❌ Bot tidak dikenal. Gunakan: \`!switch @ROCKETOTP_BOT\``);
-                }
+            // Perintah memunculkan dropdown Menu Bot
+            if (msg.content === '!menu' || msg.content === '/menu' || msg.content === '!panel') {
+                const selectMenu = new StringSelectMenuBuilder()
+                    .setCustomId('bot_select')
+                    .setPlaceholder('Pilih Bot yang ingin diakses...')
+                    .addOptions(TARGET_BOTS.map(b => ({ label: b, value: b })));
+                
+                const row = new ActionRowBuilder().addComponents(selectMenu);
+                return msg.reply({ content: '🎛️ **FOERTA Discord Panel**\nSilakan pilih bot di bawah ini untuk memulai interaksi:', components: [row] });
             }
 
             // Teruskan teks/reply biasa ke Telegram
-            try { await client.sendMessage(activeDiscordBot, { message: msg.content }); msg.react('✅'); } catch(e) { msg.react('❌'); }
+            try { await client.sendMessage(activeDiscordBot, { message: msg.content }); } catch(e) {}
         });
 
         // --- SERVER TIMER ---
