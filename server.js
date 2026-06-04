@@ -136,7 +136,7 @@ async function startSystem() {
                 const hasExact6Digits = /\b\d{3}[-\s]?\d{3}\b/.test(parsed.text);
                 const isOtpMessage = hasOtpWord && hasExact6Digits;
 
-                // 1. BROADCAST KE WEB UI
+                // 1. BROADCAST KE WEB UI (Menggunakan data original agar Web tetap normal)
                 io.emit('tg_message_update', parsed);
                 if (!msg.out && !isEdit && isOtpMessage) await checkAndSaveOtp(parsed.bot, parsed.text, parsed.messageId);
 
@@ -149,39 +149,57 @@ async function startSystem() {
                         let contentStr = `🤖 **[${parsed.bot}]**\n${contentLines}`;
                         
                         let discordComponents = [];
-                        let numButtons = [];
                         let actionButtons = [];
-                        let foundNums = new Set();
-                        let extraButtons = [];
+                        let extractedNumbers = new Set();
+                        let extractedOtps = new Set();
 
+                        // A. Ekstrak Nomor dari Tombol Telegram
                         if (msg.replyMarkup && msg.replyMarkup.rows) {
                             msg.replyMarkup.rows.forEach(row => {
                                 row.buttons.forEach(btn => {
                                     let textClean = btn.text.replace(/[\s\-\(\)]/g, '');
+                                    // Jika tombol adalah angka/nomor, masukkan ke antrean ekstraksi
                                     if (/^\+?\d{8,15}$/.test(textClean) || btn.className === 'KeyboardButtonCopy') {
-                                        numButtons.push(btn);
-                                        foundNums.add(textClean.replace(/[^\d\+]/g, ''));
+                                        extractedNumbers.add(textClean.replace(/[^\d\+]/g, ''));
                                     } else {
+                                        // Jika tombol aksi biasa (Change Number, Get Script, dll)
                                         actionButtons.push(btn);
                                     }
                                 });
                             });
                         }
 
+                        // B. Ekstrak Nomor dari Teks
                         const textNumbers = parsed.text.match(/\+\d{10,15}/g) || [];
-                        textNumbers.forEach(n => {
-                            if (!foundNums.has(n)) {
-                                extraButtons.push({ text: `📱 ${n}`, id: `num_${n}`, style: ButtonStyle.Secondary });
-                                foundNums.add(n);
-                            }
-                        });
+                        textNumbers.forEach(n => extractedNumbers.add(n));
 
+                        // C. Ekstrak Kode OTP dari Teks
                         const otpMatch = parsed.text.match(/\b\d{3}[-\s]?\d{3}\b/);
                         if (otpMatch && hasOtpWord) {
                             let otpClean = otpMatch[0].replace(/[-\s]/g, '');
-                            extraButtons.push({ text: `🔑 ${otpClean}`, id: `otp_${otpClean}`, style: ButtonStyle.Success });
+                            extractedOtps.add(otpClean);
                         }
 
+                        // --- FORMATTING CODE BLOCKS UNTUK DISCORD ---
+                        if (extractedNumbers.size > 0 || extractedOtps.size > 0) {
+                            contentStr += `\n\n`; // Beri spasi kosong
+                            
+                            if (extractedNumbers.size > 0) {
+                                contentStr += `📱 **Numbers (Tap to copy):**\n`;
+                                extractedNumbers.forEach(num => {
+                                    contentStr += `\`\`\`text\n${num}\n\`\`\``;
+                                });
+                            }
+                            
+                            if (extractedOtps.size > 0) {
+                                contentStr += `🔑 **OTP Code (Tap to copy):**\n`;
+                                extractedOtps.forEach(otp => {
+                                    contentStr += `\`\`\`text\n${otp}\n\`\`\``;
+                                });
+                            }
+                        }
+
+                        // --- MEMBANGUN TOMBOL AKSI DISCORD ---
                         let currentRow = new ActionRowBuilder();
                         const addBtnToRow = (btnBuilder) => {
                             if (currentRow.components.length >= 5) {
@@ -190,16 +208,6 @@ async function startSystem() {
                             }
                             if (discordComponents.length < 5) currentRow.addComponents(btnBuilder);
                         };
-
-                        numButtons.forEach(btn => {
-                            let cleanNum = btn.text.replace(/[^\d\+]/g, '');
-                            if(!cleanNum) cleanNum = btn.text;
-                            addBtnToRow(new ButtonBuilder().setCustomId('num_' + cleanNum.substring(0,80)).setLabel(btn.text.substring(0,80)).setStyle(ButtonStyle.Secondary));
-                        });
-
-                        extraButtons.forEach(btn => {
-                            addBtnToRow(new ButtonBuilder().setCustomId(btn.id).setLabel(btn.text).setStyle(btn.style));
-                        });
 
                         actionButtons.forEach(btn => {
                             let customId = Math.random().toString(36).substr(2, 9);
@@ -223,6 +231,7 @@ async function startSystem() {
                             addBtnToRow(dBtn);
                         });
 
+                        // Tombol Delete OTP
                         if (isOtpMessage) {
                             addBtnToRow(new ButtonBuilder().setCustomId('del_' + parsed.messageId).setLabel('🗑️ Delete').setStyle(ButtonStyle.Danger));
                         }
@@ -231,6 +240,7 @@ async function startSystem() {
 
                         const msgPayload = { content: contentStr.substring(0, 2000), components: discordComponents };
 
+                        // KIRIM / UPDATE PESAN DI DISCORD
                         if (isEdit) {
                             const oldDiscordMsg = tgToDiscordMsg.get(parsed.messageId);
                             if (isOtpMessage) {
@@ -270,19 +280,7 @@ async function startSystem() {
 
             if (!interaction.isButton()) return;
 
-            // 2. Tombol Copy Nomor HP Khusus (Dengan format Code Block ala Discord)
-            if (interaction.customId.startsWith('num_')) {
-                const num = interaction.customId.replace('num_', '');
-                return interaction.reply({ content: `\`\`\`text\n${num}\n\`\`\``, ephemeral: true });
-            }
-
-            // 3. Tombol Copy OTP Khusus (Dengan format Code Block ala Discord)
-            if (interaction.customId.startsWith('otp_')) {
-                const otp = interaction.customId.replace('otp_', '');
-                return interaction.reply({ content: `\`\`\`text\n${otp}\n\`\`\``, ephemeral: true });
-            }
-
-            // 4. Tombol Delete Pesan OTP
+            // 2. Tombol Delete Pesan OTP
             if (interaction.customId.startsWith('del_')) {
                 const tgMsgId = parseInt(interaction.customId.split('_')[1]);
                 try {
@@ -293,7 +291,7 @@ async function startSystem() {
                 return;
             }
 
-            // 5. Tombol Aksi Normal Telegram
+            // 3. Tombol Aksi Normal Telegram
             const cacheData = discordButtonCache.get(interaction.customId);
             if (!cacheData) {
                 try { await interaction.deferUpdate(); } catch(e){} 
