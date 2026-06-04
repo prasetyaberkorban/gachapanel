@@ -21,8 +21,6 @@ const discordButtonCache = new Map();
 const tgToDiscordMsg = new Map();
 const processedOtps = new Set();
 
-if (DISCORD_TOKEN) discordClient.login(DISCORD_TOKEN).then(() => console.log('[DISCORD] Bot Connected!')).catch(e => console.log('[DISCORD ERROR]', e));
-
 // --- KONFIGURASI ENVIRONMENT TELEGRAM & WEB ---
 const API_ID = parseInt(process.env.TELEGRAM_API_ID) || 31303511; 
 const API_HASH = process.env.TELEGRAM_API_HASH || '59e239139ac6905f936c87d85f55d550'; 
@@ -61,6 +59,38 @@ function getJakartaDateStr() {
     const jktDate = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
     return `${jktDate.getFullYear()}-${String(jktDate.getMonth() + 1).padStart(2, '0')}-${String(jktDate.getDate()).padStart(2, '0')}`;
 }
+
+// --- FUNGSI PANEL KONTROL DISCORD ---
+async function sendDiscordDashboard(channel) {
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('bot_select')
+        .setPlaceholder('Pilih Bot yang ingin dikontrol...')
+        .addOptions(TARGET_BOTS.map(b => ({ label: b, value: b })));
+    
+    const startBtn = new ButtonBuilder()
+        .setCustomId('sys_start_bot')
+        .setLabel('▶ /START BOT')
+        .setStyle(ButtonStyle.Success);
+
+    const row1 = new ActionRowBuilder().addComponents(selectMenu);
+    const row2 = new ActionRowBuilder().addComponents(startBtn);
+
+    await channel.send({
+        content: `🎛️ **FOERTA Discord Controller**\n🟢 Sinyal saat ini diarahkan ke: **${activeDiscordBot}**\n\n*Gunakan menu di bawah untuk berpindah bot, lalu klik Start.*`,
+        components: [row1, row2]
+    });
+}
+
+// Event saat bot Discord pertama kali online
+discordClient.once('ready', async () => {
+    console.log('[DISCORD] Bot Connected!');
+    if (DISCORD_CHANNEL_ID) {
+        const channel = discordClient.channels.cache.get(DISCORD_CHANNEL_ID);
+        if (channel) sendDiscordDashboard(channel);
+    }
+});
+if (DISCORD_TOKEN) discordClient.login(DISCORD_TOKEN).catch(e => console.log('[DISCORD ERROR]', e));
+
 
 async function startSystem() {
     server.listen(PORT, () => console.log(`[WEB] Server running on port ${PORT}`));
@@ -136,7 +166,7 @@ async function startSystem() {
                 const hasExact6Digits = /\b\d{3}[-\s]?\d{3}\b/.test(parsed.text);
                 const isOtpMessage = hasOtpWord && hasExact6Digits;
 
-                // 1. BROADCAST KE WEB UI (Menggunakan data original agar Web tetap normal)
+                // 1. BROADCAST KE WEB UI
                 io.emit('tg_message_update', parsed);
                 if (!msg.out && !isEdit && isOtpMessage) await checkAndSaveOtp(parsed.bot, parsed.text, parsed.messageId);
 
@@ -153,36 +183,30 @@ async function startSystem() {
                         let extractedNumbers = new Set();
                         let extractedOtps = new Set();
 
-                        // A. Ekstrak Nomor dari Tombol Telegram
                         if (msg.replyMarkup && msg.replyMarkup.rows) {
                             msg.replyMarkup.rows.forEach(row => {
                                 row.buttons.forEach(btn => {
                                     let textClean = btn.text.replace(/[\s\-\(\)]/g, '');
-                                    // Jika tombol adalah angka/nomor, masukkan ke antrean ekstraksi
                                     if (/^\+?\d{8,15}$/.test(textClean) || btn.className === 'KeyboardButtonCopy') {
                                         extractedNumbers.add(textClean.replace(/[^\d\+]/g, ''));
                                     } else {
-                                        // Jika tombol aksi biasa (Change Number, Get Script, dll)
                                         actionButtons.push(btn);
                                     }
                                 });
                             });
                         }
 
-                        // B. Ekstrak Nomor dari Teks
                         const textNumbers = parsed.text.match(/\+\d{10,15}/g) || [];
                         textNumbers.forEach(n => extractedNumbers.add(n));
 
-                        // C. Ekstrak Kode OTP dari Teks
                         const otpMatch = parsed.text.match(/\b\d{3}[-\s]?\d{3}\b/);
                         if (otpMatch && hasOtpWord) {
                             let otpClean = otpMatch[0].replace(/[-\s]/g, '');
                             extractedOtps.add(otpClean);
                         }
 
-                        // --- FORMATTING CODE BLOCKS UNTUK DISCORD ---
                         if (extractedNumbers.size > 0 || extractedOtps.size > 0) {
-                            contentStr += `\n\n`; // Beri spasi kosong
+                            contentStr += `\n\n`; 
                             
                             if (extractedNumbers.size > 0) {
                                 contentStr += `📱 **Numbers (Tap to copy):**\n`;
@@ -199,7 +223,6 @@ async function startSystem() {
                             }
                         }
 
-                        // --- MEMBANGUN TOMBOL AKSI DISCORD ---
                         let currentRow = new ActionRowBuilder();
                         const addBtnToRow = (btnBuilder) => {
                             if (currentRow.components.length >= 5) {
@@ -231,7 +254,6 @@ async function startSystem() {
                             addBtnToRow(dBtn);
                         });
 
-                        // Tombol Delete OTP
                         if (isOtpMessage) {
                             addBtnToRow(new ButtonBuilder().setCustomId('del_' + parsed.messageId).setLabel('🗑️ Delete').setStyle(ButtonStyle.Danger));
                         }
@@ -240,7 +262,6 @@ async function startSystem() {
 
                         const msgPayload = { content: contentStr.substring(0, 2000), components: discordComponents };
 
-                        // KIRIM / UPDATE PESAN DI DISCORD
                         if (isEdit) {
                             const oldDiscordMsg = tgToDiscordMsg.get(parsed.messageId);
                             if (isOtpMessage) {
@@ -271,16 +292,30 @@ async function startSystem() {
         // --- DISCORD INTERACTION HANDLER ---
         discordClient.on('interactionCreate', async (interaction) => {
             
-            // 1. Menu Dropdown Bot (!menu)
+            // 1. Handle Pilihan Bot dari Dashboard
             if (interaction.isStringSelectMenu() && interaction.customId === 'bot_select') {
                 activeDiscordBot = interaction.values[0];
-                await interaction.update({ content: `✅ Panel Discord dialihkan ke **${activeDiscordBot}**`, components: [] });
+                await interaction.update({ 
+                    content: `🎛️ **FOERTA Discord Controller**\n🟢 Sinyal saat ini diarahkan ke: **${activeDiscordBot}**\n\n*Gunakan menu di bawah untuk berpindah bot, lalu klik Start.*` 
+                });
                 return;
             }
 
             if (!interaction.isButton()) return;
 
-            // 2. Tombol Delete Pesan OTP
+            // 2. Handle Tombol Start dari Dashboard
+            if (interaction.customId === 'sys_start_bot') {
+                await interaction.reply({ content: `⏳ Memulai **${activeDiscordBot}**...`, ephemeral: true });
+                try {
+                    await client.sendMessage(activeDiscordBot, { message: '/start' });
+                    await interaction.editReply({ content: `✅ Berhasil memulai **${activeDiscordBot}**!` });
+                } catch(e) {
+                    await interaction.editReply({ content: `❌ Gagal menghubungi bot.` });
+                }
+                return;
+            }
+
+            // 3. Tombol Delete Pesan OTP
             if (interaction.customId.startsWith('del_')) {
                 const tgMsgId = parseInt(interaction.customId.split('_')[1]);
                 try {
@@ -291,7 +326,7 @@ async function startSystem() {
                 return;
             }
 
-            // 3. Tombol Aksi Normal Telegram
+            // 4. Tombol Aksi Normal Telegram
             const cacheData = discordButtonCache.get(interaction.customId);
             if (!cacheData) {
                 try { await interaction.deferUpdate(); } catch(e){} 
@@ -312,20 +347,15 @@ async function startSystem() {
         discordClient.on('messageCreate', async (msg) => {
             if (msg.author.bot || msg.channelId !== DISCORD_CHANNEL_ID) return;
 
+            // Perintah manual untuk memanggil ulang Dashboard
             if (msg.content === '!menu' || msg.content === '/menu' || msg.content === '!panel') {
-                const selectMenu = new StringSelectMenuBuilder()
-                    .setCustomId('bot_select')
-                    .setPlaceholder('Pilih Bot yang ingin dikontrol...')
-                    .addOptions(TARGET_BOTS.map(b => ({ label: b, value: b })));
-                
-                const row = new ActionRowBuilder().addComponents(selectMenu);
-                return msg.reply({ content: '🎛️ **FOERTA Discord Controller**\nPilih bot di bawah ini untuk mengalihkan sinyal:', components: [row] });
+                return sendDiscordDashboard(msg.channel);
             }
 
             try { await client.sendMessage(activeDiscordBot, { message: msg.content }); } catch(e) {}
         });
 
-        // --- SERVER TIMER ---
+        // --- SERVER TIMER & WEB SOCKETS ---
         function runServerTimer() {
             if (timerIntervalId) clearInterval(timerIntervalId);
             timerIntervalId = setInterval(() => {
