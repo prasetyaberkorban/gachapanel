@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 const ENV_SESSION = process.env.TELEGRAM_SESSION || "";
 
 // DISCORD CONFIG
-const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "MTUxMjEyMjcwMzMyNTQyOTc5Mw.GBgkkS.q2ODcBzOznU6qbxh_hXxb-3PiexriP6mHA3IOo";
+const DISCORD_TOKEN = process.env.DISCORD_TOKEN || "";
 const DISCORD_CHANNEL_ID = process.env.DISCORD_CHANNEL_ID || "1195930707520913550";
 
 // BOTS CONFIG
