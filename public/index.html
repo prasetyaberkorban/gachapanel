@@ -7,12 +7,10 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>FOERTA — Telegram Center</title>
-    <link rel="stylesheet" href="style.css?v=11.30">
+    <link rel="stylesheet" href="style.css?v=11.32">
     <style>
-        /* --- KENDALI FIX LAYOUT (ANTI BLANK & ANTI CROP DI HP) --- */
         * { box-sizing: border-box; }
         
-        /* Kunci root agar tidak bergerak sama sekali */
         html, body {
             margin: 0; padding: 0; 
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -20,13 +18,11 @@
             background: #0b0c0f; color: #FFFFFF;
         }
 
-        /* Container aplikasi mutlak mengikuti ukuran layar yang terlihat (visible bounds) */
         #app-container {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             display: flex; flex-direction: row; overflow: hidden;
         }
 
-        /* --- SIDEBAR --- */
         .sidebar {
             width: 220px; height: 100%; background: #1A1D24; 
             border-right: 1px solid #3A4150; display: flex; 
@@ -34,8 +30,6 @@
             z-index: 2000; flex-shrink: 0;
         }
 
-        /* --- MAIN & SEMUA KOMPONEN ANAK (STRICT FLEX SHRINK) --- */
-        /* flex: 1 1 0; memastikan elemen mau menyusut saat layar HP sempit */
         .main, .content, .page, .card, .chat-wrapper {
             display: flex; flex-direction: column;
             flex: 1 1 0; min-height: 0; overflow: hidden;
@@ -51,7 +45,6 @@
         .page.active { display: flex; }
         .top-bar-mobile { display: none; }
 
-        /* --- MODE MOBILE (HP) --- */
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: -100%; top: 0; width: 250px; bottom: 0; height: auto; }
             .sidebar.show { left: 0; }
@@ -78,7 +71,6 @@
             }
         }
 
-        /* --- DESAIN CARD & CHAT AREA --- */
         .card { 
             background: #1A1D24; border: 1px solid #3A4150; 
             border-radius: 8px; padding: 10px; width: 100%;
@@ -97,7 +89,6 @@
 
         .chat-wrapper { background: #0b0c0f; border-radius: 8px; border: 1px solid #3A4150; }
         
-        /* Area scroll Chat (Diberi padding bottom lega agar pesan tidak terpotong browser) */
         .messages-area { 
             flex: 1 1 0; overflow-y: auto; padding: 15px; padding-bottom: 80px; 
             display: flex; flex-direction: column; gap: 12px; width: 100%; 
@@ -129,7 +120,7 @@
 
         .timer-floating-pod {
             position: fixed; bottom: 20px; right: 20px; background: #2D323E;
-            border: 2px solid #00D2FF; border-radius: 30px; display: flex; align-items: center;
+            border: 2px solid #00D2FF; border-radius: 30px; align-items: center;
             box-shadow: 0 4px 15px rgba(0, 210, 255, 0.2); z-index: 9999; overflow: hidden; transition: all 0.3s ease;
         }
         .timer-click-zone { color: #00D2FF; padding: 10px 16px; font-size: 13px; font-weight: bold; cursor: pointer; user-select: none; }
@@ -154,7 +145,7 @@
       </div>
       <div class="nav-item active" id="nav-chat" onclick="switchPage('chat')" style="padding: 12px 20px; cursor:pointer; color:#00D2FF; font-weight:bold; background:rgba(0,210,255,0.1); border-left:3px solid #00D2FF;">🤖 Panel Bot OTP</div>
       <div class="nav-item" id="nav-logs" onclick="switchPage('logs')" style="padding: 12px 20px; cursor:pointer; color:#A0A5B5; font-weight:bold;">📊 Histori & Analitik</div>
-      <div class="nav-item" onclick="toggleTimerVisibility()" style="padding: 12px 20px; cursor:pointer; color:#A0A5B5; font-weight:bold;"><span id="nav-toggle-timer">⏱️ Sembunyikan Timer</span></div>
+      <div class="nav-item" onclick="toggleTimerVisibility()" style="padding: 12px 20px; cursor:pointer; color:#A0A5B5; font-weight:bold;"><span id="nav-toggle-timer">⏱️ Tampilkan Timer</span></div>
     </nav>
 
     <div class="main">
@@ -237,7 +228,7 @@
 
 </div> <div id="toast">Nomor berhasil disalin!</div>
 
-<div id="timer-pod" class="timer-floating-pod">
+<div id="timer-pod" class="timer-floating-pod" style="display: none;">
     <div class="timer-click-zone" id="timer-display" onclick="triggerTimerStart()">⏱️ Start 01:30</div>
     <div class="timer-stop-trigger" id="timer-stop-control" onclick="triggerTimerStop()">❌ STOP</div>
 </div>
@@ -280,7 +271,7 @@
     }
 
     // --- FITUR TOGGLE VISIBILITAS TIMER ---
-    let isTimerVisible = true;
+    let isTimerVisible = false;
     function toggleTimerVisibility() {
         const pod = document.getElementById('timer-pod');
         const btnText = document.getElementById('nav-toggle-timer');
@@ -313,13 +304,12 @@
     }
     setInterval(updateAllRelativeTimestamps, 30000);
 
-    // --- TOGGLE LIST MENU BOT YANG 100% AMAN ---
+    // --- TOGGLE LIST MENU BOT ---
     function toggleBotMenu() {
         const box = document.getElementById('botTabsGroupContainer');
         const btnM = document.getElementById('btnToggleMenuMobile');
         const btnD = document.getElementById('btnToggleMenuDesktop');
         
-        // Pengecekan style secara aman
         if (box.style.display === 'none' || box.style.display === '') {
             box.style.display = 'flex';
             if(btnM) btnM.innerText = '🤖 Kelola Bot ▲';
@@ -481,8 +471,6 @@
             return;
         }
         payload.messages.forEach(msg => { renderTgMessage(msg); });
-        
-        // Timeout pendek memastikan rendering selesai sebelum scroll
         setTimeout(scrollTgBottom, 100);
     });
 
